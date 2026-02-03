@@ -1,7 +1,7 @@
-package com.codingshuttle.hackathon.skillsyncai;
+package com.codingshuttle.hackathon.skillsyncai.enums;
 
 public enum UserRole {
-    ADMIN,
+    CANDIDATE,
     RECRUITER,
-    CANDIDATE
+    ADMIN
 }

@@ -1,68 +1,41 @@
 package com.codingshuttle.hackathon.skillsyncai.entity;
 
-import com.codingshuttle.hackathon.skillsyncai.enums.ApplicationSource;
 import com.codingshuttle.hackathon.skillsyncai.enums.ApplicationStatus;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
 @Table(name = "applications")
 public class Application {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "candidate_id", nullable = false)
-    private Candidate candidate;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "job_id", nullable = false)
     private Job job;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "resume_id")
-    private Resume resume;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ApplicationStatus status;
 
-    // Application Details
+    private Double matchScore; // 0.0 to 100.0
+
     @Column(columnDefinition = "TEXT")
-    private String coverLetter;
+    private String aiAnalysis;
 
-    @Enumerated(EnumType.STRING)
-    private ApplicationSource source; // WEBSITE, LINKEDIN, REFERRAL, AGENCY
-
-    private String referralName;
-    private String referralEmail;
-
-    // Status Tracking
-    @Enumerated(EnumType.STRING)
-    private ApplicationStatus status; // SUBMITTED, SCREENING, SHORTLISTED, REJECTED, HIRED
-
+    @CreationTimestamp
     private LocalDateTime appliedAt;
-    private LocalDateTime statusUpdatedAt;
-    private String statusNotes;
-
-    // AI Screening Results
-    @OneToOne(mappedBy = "application", cascade = CascadeType.ALL)
-    private ScreeningResult screeningResult;
-
-    @OneToOne(mappedBy = "application", cascade = CascadeType.ALL)
-    private MatchingScore matchingScore;
-
-    // Recruiter Actions
-    private Boolean isStarred;
-    private String recruiterNotes;
-    private Integer rating; // 1-5 stars
-
-    // Communication
-    private LocalDateTime lastContactedAt;
-    private String nextStep;
-    private LocalDateTime nextFollowUpDate;
-
-    @OneToMany(mappedBy = "application")
-    private List<Interview> interviews = new ArrayList<>();
 }

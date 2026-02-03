@@ -1,13 +1,15 @@
 package com.codingshuttle.hackathon.skillsyncai.entity;
 
-import com.codingshuttle.hackathon.skillsyncai.UserRole;
-
+import com.codingshuttle.hackathon.skillsyncai.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Getter
@@ -18,25 +20,34 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
     @Column(unique = true, nullable = false)
     private String email;
+
     @Column(nullable = false)
     private String password;
 
-    private String firstName;
-    private String lastName;
-    private String phone;
+    @Column(nullable = false)
+    private String name;
 
     @Enumerated(EnumType.STRING)
-    private UserRole role; // CANDIDATE, RECRUITER, ADMIN
+    @Column(nullable = false)
+    private UserRole role;
 
+    @Column(columnDefinition = "TEXT")
+    private String bio;
+
+    private String linkedInUrl;
+    private String portfolioUrl;
+
+    @ElementCollection
+    private List<String> skills;
+
+    private Integer experienceYears;
+
+    @CreationTimestamp
     private LocalDateTime createdAt;
-    private LocalDateTime lastLoginAt;
-    private boolean isActive;
 
-    // Common attributes for all users
-    private String profilePictureUrl;
-    private String timezone;
-    private String preferredLanguage;
-
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 }

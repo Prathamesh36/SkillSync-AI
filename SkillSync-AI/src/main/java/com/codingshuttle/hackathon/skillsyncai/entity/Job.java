@@ -1,17 +1,22 @@
 package com.codingshuttle.hackathon.skillsyncai.entity;
 
-
 import com.codingshuttle.hackathon.skillsyncai.enums.EmploymentType;
-import com.codingshuttle.hackathon.skillsyncai.enums.JobStatus;
-import com.codingshuttle.hackathon.skillsyncai.enums.WorkLocationType;
+import com.codingshuttle.hackathon.skillsyncai.enums.JobType;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
 @Table(name = "jobs")
 public class Job {
     @Id
@@ -21,64 +26,39 @@ public class Job {
     @Column(nullable = false)
     private String title;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT", nullable = false)
     private String description;
 
-    @Column(columnDefinition = "TEXT")
-    private String requirements;
+    @Column(nullable = false)
+    private String companyName;
 
-    @Column(columnDefinition = "TEXT")
-    private String responsibilities;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id", nullable = false)
-    private Company company;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "department_id")
-    private Department department;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "posted_by_id")
-    private Recruiter postedBy;
-
-    // Job Details
-    @Enumerated(EnumType.STRING)
-    private EmploymentType employmentType; // FULL_TIME, PART_TIME, CONTRACT, INTERNSHIP
-
-    @Enumerated(EnumType.STRING)
-    private WorkLocationType workLocationType; // ONSITE, REMOTE, HYBRID
-
+    @Column(nullable = false)
     private String location;
+
     private BigDecimal salaryMin;
     private BigDecimal salaryMax;
-    private String salaryCurrency;
-    private String salaryPeriod; // YEARLY, MONTHLY, HOURLY
+    private String currency; // "USD", "INR"
 
-    // Status & Dates
     @Enumerated(EnumType.STRING)
-    private JobStatus status; // DRAFT, PUBLISHED, CLOSED, FILLED
+    private JobType jobType; // REMOTE, HYBRID, ONSITE
 
-    private LocalDateTime publishedAt;
-    private LocalDateTime closedAt;
-    private LocalDateTime expiresAt;
+    @Enumerated(EnumType.STRING)
+    private EmploymentType employmentType; // FULL_TIME, CONTRACT
 
-    // AI Fields
-    @Column(columnDefinition = "vector(1536)")
-    private float[] embedding; // Job description embedding
+    private Integer requiredExperienceYears;
 
-    @Column(columnDefinition = "jsonb")
-    private String aiExtractedRequirements; // Structured requirements from AI
+    @ElementCollection
+    private List<String> skillsRequired;
 
-    // Relationships
-    @OneToMany(mappedBy = "job", cascade = CascadeType.ALL)
-    private List<JobRequirement> requirementsList = new ArrayList<>();
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recruiter_id", nullable = false)
+    private User postedBy;
 
-    @OneToMany(mappedBy = "job")
-    private List<Application> applications = new ArrayList<>();
+    private boolean active = true;
 
-    // Analytics
-    private Integer viewCount;
-    private Integer applicationCount;
-    private Integer shortlistedCount;
+    @CreationTimestamp
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    private LocalDateTime updatedAt;
 }

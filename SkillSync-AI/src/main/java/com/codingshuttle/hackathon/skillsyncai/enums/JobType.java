@@ -1,7 +1,7 @@
 package com.codingshuttle.hackathon.skillsyncai.enums;
 
-public enum HiringProcessType {
+public enum JobType {
     REMOTE,
-    ONSITE,
-    HYBRID
+    HYBRID,
+    ONSITE
 }

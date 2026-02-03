@@ -1,58 +1,38 @@
 package com.codingshuttle.hackathon.skillsyncai.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
 @Table(name = "resumes")
 public class Resume {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne
-    @JoinColumn(name = "candidate_id", nullable = false)
-    private Candidate candidate;
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
+    private User user;
 
-    // Original file info
-    private String originalFileName;
-    private String fileType; // PDF, DOC, DOCX
-    private Long fileSize;
-    private String storagePath;
-    private LocalDateTime uploadedAt;
+    private String fileName;
+    private String fileType;
+    private String s3Url; // Or local path
 
-    // Raw and parsed content
     @Column(columnDefinition = "TEXT")
-    private String rawText; // Extracted text from file
+    private String parsedContent;
 
-    @Column(columnDefinition = "jsonb")
-    private String parsedJson; // AI-parsed structured JSON
+    @ElementCollection
+    private List<String> extractedSkills;
 
-    // AI Embeddings for vector search
-    @Column(columnDefinition = "vector(1536)")
-    private float[] embedding; // For semantic search
-
-    private LocalDateTime lastParsedAt;
-    private String parsingVersion; // AI model version used
-
-    @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL)
-    private List<Skill> skills = new ArrayList<>();
-
-    @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL)
-    private List<Experience> experiences = new ArrayList<>();
-
-    @OneToMany(mappedBy = "resume", cascade = CascadeType.ALL)
-    private List<Education> educations = new ArrayList<>();
-
-    // AI Analysis fields
-    private Double experienceScore;
-    private Double skillRelevanceScore;
-    private String aiFeedback;
-
-    @OneToMany(mappedBy = "resume")
-    private List<Application> applications = new ArrayList<>();
+    @CreationTimestamp
+    private LocalDateTime uploadedAt;
 }
