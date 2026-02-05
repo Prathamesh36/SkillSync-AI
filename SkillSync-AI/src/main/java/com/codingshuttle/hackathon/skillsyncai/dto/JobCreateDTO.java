@@ -9,15 +9,18 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public record JobCreateDTO(
-        @NotBlank String title,
-        @NotBlank String description,
-        @NotBlank String companyName,
-        @NotBlank String location,
-        BigDecimal salaryMin,
-        BigDecimal salaryMax,
-        String currency,
-        @NotNull JobType jobType,
-        @NotNull EmploymentType employmentType,
-        Integer requiredExperienceYears,
-        List<String> skillsRequired) {
+                @NotBlank String title,
+
+                @NotBlank String description,
+
+                @NotBlank String companyName,
+
+                @NotBlank String location,
+                BigDecimal salaryMin,
+                BigDecimal salaryMax,
+                String currency,
+                @NotNull JobType jobType,
+                @NotNull EmploymentType employmentType,
+                Integer requiredExperienceYears,
+                List<String> skillsRequired) {
 }

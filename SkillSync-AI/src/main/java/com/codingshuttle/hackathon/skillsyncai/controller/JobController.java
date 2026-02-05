@@ -4,11 +4,13 @@ import com.codingshuttle.hackathon.skillsyncai.dto.JobCreateDTO;
 import com.codingshuttle.hackathon.skillsyncai.dto.JobResponseDTO;
 import com.codingshuttle.hackathon.skillsyncai.entity.Job;
 import com.codingshuttle.hackathon.skillsyncai.entity.User;
+import com.codingshuttle.hackathon.skillsyncai.exception.ResourceNotFoundException;
 import com.codingshuttle.hackathon.skillsyncai.mapper.JobMapper;
 import com.codingshuttle.hackathon.skillsyncai.repository.UserRepository;
 import com.codingshuttle.hackathon.skillsyncai.service.JobService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,11 +29,12 @@ public class JobController {
 
     @PostMapping
     public ResponseEntity<JobResponseDTO> createJob(
-            @RequestHeader("X-User-Id") Long recruiterId,
+            org.springframework.security.core.Authentication authentication,
             @Valid @RequestBody JobCreateDTO dto) {
 
-        User recruiter = userRepository.findById(recruiterId)
-                .orElseThrow(() -> new RuntimeException("Recruiter not found"));
+        String email = authentication.getName();
+        User recruiter = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Recruiter not found with email: " + email));
 
         Job job = jobMapper.toEntity(dto);
         job.setPostedBy(recruiter);

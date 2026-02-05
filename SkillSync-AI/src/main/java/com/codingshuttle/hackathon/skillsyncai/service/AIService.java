@@ -11,6 +11,7 @@ import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -25,22 +26,33 @@ public class AIService {
      * Generates embedding vector for a given text.
      */
     public List<Double> generateEmbedding(String text) {
-        return embeddingModel.embed(text);
+        log.debug("Generating embedding for text length: {}", text.length());
+        float[] floatEmbedding = embeddingModel.embed(text);
+        List<Double> embedding = new ArrayList<>(floatEmbedding.length);
+        for (float f : floatEmbedding) {
+            embedding.add((double) f);
+        }
+        return embedding;
     }
 
     /**
      * Parses a resume file (PDF/Doc) and extracts structured data.
      */
     public ParsedResumeDTO parseResume(Resource resumeFile) {
+        log.info("Starting resume parsing for file: {}", resumeFile.getFilename());
         // 1. Extract Text using Tika
         TikaDocumentReader reader = new TikaDocumentReader(resumeFile);
         List<Document> documents = reader.get();
         String content = documents.stream()
-                .map(Document::getContent)
+                .map(Document::getText)
                 .reduce("", String::concat);
+
+        log.debug("Extracted text content from resume (length: {})", content.length());
 
         // 2. Query LLM for structured extraction
         ChatClient chatClient = chatClientBuilder.build();
+
+        log.info("Sending resume content to LLM for extraction");
 
         return chatClient.prompt()
                 .user(u -> u.text("Extract the following details from the resume content below:\n" +

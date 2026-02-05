@@ -18,38 +18,38 @@ import java.util.stream.Collectors;
 @Slf4j
 public class JobService {
 
-    private final JobRepository jobRepository;
-    private final VectorStore vectorStore;
+        private final JobRepository jobRepository;
+        private final VectorStore vectorStore;
 
-    public Job createJob(Job job) {
-        // 1. Save to DB
-        Job savedJob = jobRepository.save(job);
+        public Job createJob(Job job) {
+                // 1. Save to DB
+                Job savedJob = jobRepository.save(job);
 
-        // 2. Generate Embedding & Save to Vector Store
-        String jobContent = "Job Title: " + job.getTitle() +
-                "\nDescription: " + job.getDescription() +
-                "\nSkills: " + String.join(", ", job.getSkillsRequired()) +
-                "\nLocation: " + job.getLocation();
+                // 2. Generate Embedding & Save to Vector Store
+                String jobContent = "Job Title: " + job.getTitle() +
+                                "\nDescription: " + job.getDescription() +
+                                "\nSkills: " + String.join(", ", job.getSkillsRequired()) +
+                                "\nLocation: " + job.getLocation();
 
-        Document document = new Document(jobContent, Map.of(
-                "jobId", savedJob.getId(),
-                "jobType", job.getJobType().name()));
+                Document document = new Document(jobContent, Map.of(
+                                "jobId", savedJob.getId(),
+                                "jobType", job.getJobType().name()));
 
-        vectorStore.add(List.of(document));
+                vectorStore.add(List.of(document));
 
-        return savedJob;
-    }
+                return savedJob;
+        }
 
-    public List<Job> searchJobs(String query) {
-        // Semantic search using Vector Store
-        List<Document> similarDocuments = vectorStore.similaritySearch(
-                SearchRequest.query(query).withTopK(5));
+        public List<Job> searchJobs(String query) {
+                // Semantic search using Vector Store
+                List<Document> similarDocuments = vectorStore.similaritySearch(
+                                SearchRequest.builder().query(query).topK(5).build());
 
-        // Extract Job IDs and fetch from DB
-        List<Long> jobIds = similarDocuments.stream()
-                .map(doc -> Long.valueOf(doc.getMetadata().get("jobId").toString()))
-                .collect(Collectors.toList());
+                // Extract Job IDs and fetch from DB
+                List<Long> jobIds = similarDocuments.stream()
+                                .map(doc -> Long.valueOf(doc.getMetadata().get("jobId").toString()))
+                                .collect(Collectors.toList());
 
-        return jobRepository.findAllById(jobIds);
-    }
+                return jobRepository.findAllById(jobIds);
+        }
 }

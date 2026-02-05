@@ -1,21 +1,35 @@
 package com.codingshuttle.hackathon.skillsyncai.mapper;
 
+import com.codingshuttle.hackathon.skillsyncai.dto.CandidateProfileDTO;
+import com.codingshuttle.hackathon.skillsyncai.dto.RecruiterProfileDTO;
 import com.codingshuttle.hackathon.skillsyncai.dto.UserCreateDTO;
 import com.codingshuttle.hackathon.skillsyncai.dto.UserResponseDTO;
 import com.codingshuttle.hackathon.skillsyncai.dto.UserUpdateDTO;
+import com.codingshuttle.hackathon.skillsyncai.entity.Candidate;
+import com.codingshuttle.hackathon.skillsyncai.entity.Recruiter;
 import com.codingshuttle.hackathon.skillsyncai.entity.User;
+import com.codingshuttle.hackathon.skillsyncai.enums.UserRole;
+import com.codingshuttle.hackathon.skillsyncai.repository.CandidateRepository;
+import com.codingshuttle.hackathon.skillsyncai.repository.RecruiterRepository;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 public class UserMapper {
 
-    private final ModelMapper modelMapper;
+    private final CandidateRepository candidateRepository;
+    private final RecruiterRepository recruiterRepository;
 
     public User toEntity(UserCreateDTO dto) {
-        return modelMapper.map(dto, User.class);
+        User user = new User();
+        user.setEmail(dto.email());
+        user.setName(dto.name());
+        user.setRole(dto.role());
+        user.setBio(dto.bio());
+        user.setLinkedInUrl(dto.linkedInUrl());
+        user.setPortfolioUrl(dto.portfolioUrl());
+        return user;
     }
 
     public void updateEntity(User user, UserUpdateDTO dto) {
@@ -27,13 +41,31 @@ public class UserMapper {
             user.setLinkedInUrl(dto.linkedInUrl());
         if (dto.portfolioUrl() != null)
             user.setPortfolioUrl(dto.portfolioUrl());
-        if (dto.skills() != null)
-            user.setSkills(dto.skills());
-        if (dto.experienceYears() != null)
-            user.setExperienceYears(dto.experienceYears());
     }
 
     public UserResponseDTO toDTO(User user) {
+        CandidateProfileDTO candidateProfile = null;
+        RecruiterProfileDTO recruiterProfile = null;
+
+        if (user.getRole() == UserRole.CANDIDATE) {
+            Candidate candidate = candidateRepository.findByUserId(user.getId()).orElse(null);
+            if (candidate != null) {
+                candidateProfile = new CandidateProfileDTO(
+                        candidate.getSkills(),
+                        candidate.getExperienceYears(),
+                        candidate.getHeadline(),
+                        candidate.getLocation());
+            }
+        } else if (user.getRole() == UserRole.RECRUITER) {
+            Recruiter recruiter = recruiterRepository.findByUserId(user.getId()).orElse(null);
+            if (recruiter != null) {
+                recruiterProfile = new RecruiterProfileDTO(
+                        recruiter.getCompanyName(),
+                        recruiter.getDesignation(),
+                        recruiter.getCompanyWebsite());
+            }
+        }
+
         return new UserResponseDTO(
                 user.getId(),
                 user.getEmail(),
@@ -42,8 +74,8 @@ public class UserMapper {
                 user.getBio(),
                 user.getLinkedInUrl(),
                 user.getPortfolioUrl(),
-                user.getSkills(),
-                user.getExperienceYears(),
+                candidateProfile,
+                recruiterProfile,
                 user.getCreatedAt());
     }
 }

@@ -1,27 +1,32 @@
 package com.codingshuttle.hackathon.skillsyncai.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Getter
+@Setter
+@NoArgsConstructor
 @Table(name = "candidates")
-public class Candidate extends User {
+public class Candidate {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @OneToOne
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    private String fullName;
-    private String location;
-    private int experienceYears;
+    @ElementCollection
+    @CollectionTable(name = "candidate_skills", joinColumns = @JoinColumn(name = "candidate_id"))
+    @Column(name = "skill")
+    private List<String> skills;
 
-    @Column(columnDefinition = "jsonb")
-    private String skillsJson;   // ["Java","Spring","Docker"]
-
+    private Integer experienceYears;
     private String headline;
+    private String location;
 }

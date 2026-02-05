@@ -2,12 +2,16 @@ package com.codingshuttle.hackathon.skillsyncai.service;
 
 import com.codingshuttle.hackathon.skillsyncai.dto.ApplicationResponseDTO;
 import com.codingshuttle.hackathon.skillsyncai.entity.Application;
+import com.codingshuttle.hackathon.skillsyncai.entity.Candidate;
 import com.codingshuttle.hackathon.skillsyncai.entity.Job;
 import com.codingshuttle.hackathon.skillsyncai.entity.Resume;
 import com.codingshuttle.hackathon.skillsyncai.entity.User;
 import com.codingshuttle.hackathon.skillsyncai.enums.ApplicationStatus;
+import com.codingshuttle.hackathon.skillsyncai.exception.BadRequestException;
+import com.codingshuttle.hackathon.skillsyncai.exception.ResourceNotFoundException;
 import com.codingshuttle.hackathon.skillsyncai.mapper.ApplicationMapper;
 import com.codingshuttle.hackathon.skillsyncai.repository.ApplicationRepository;
+import com.codingshuttle.hackathon.skillsyncai.repository.CandidateRepository;
 import com.codingshuttle.hackathon.skillsyncai.repository.JobRepository;
 import com.codingshuttle.hackathon.skillsyncai.repository.ResumeRepository;
 import com.codingshuttle.hackathon.skillsyncai.repository.UserRepository;
@@ -29,17 +33,21 @@ public class ApplicationService {
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
     private final ResumeRepository resumeRepository;
+    private final CandidateRepository candidateRepository;
     private final ChatClient.Builder chatClientBuilder;
     private final ApplicationMapper applicationMapper;
 
     @Transactional
     public ApplicationResponseDTO applyForJob(Long userId, Long jobId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new RuntimeException("Job not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Job not found with id: " + jobId));
         Resume resume = resumeRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Resume not found. Please upload a resume first."));
+                .orElseThrow(() -> new BadRequestException("Resume not found. Please upload a resume first."));
+
+        Candidate candidate = candidateRepository.findByUserId(userId)
+                .orElseThrow(() -> new BadRequestException("Candidate profile not found."));
 
         // Calculate Match Score using AI
         String prompt = String.format("""
@@ -61,8 +69,8 @@ public class ApplicationService {
                 """,
                 job.getTitle(), job.getDescription(), String.join(", ", job.getSkillsRequired()),
                 job.getRequiredExperienceYears() != null ? job.getRequiredExperienceYears() : 0,
-                String.join(", ", user.getSkills() != null ? user.getSkills() : List.of()),
-                user.getExperienceYears() != null ? user.getExperienceYears() : 0,
+                String.join(", ", candidate.getSkills() != null ? candidate.getSkills() : List.of()),
+                candidate.getExperienceYears() != null ? candidate.getExperienceYears() : 0,
                 resume.getParsedContent() != null
                         ? resume.getParsedContent().substring(0, Math.min(500, resume.getParsedContent().length()))
                         : "N/A");
@@ -111,7 +119,7 @@ public class ApplicationService {
     @Transactional
     public ApplicationResponseDTO updateStatus(Long applicationId, ApplicationStatus status) {
         Application application = applicationRepository.findById(applicationId)
-                .orElseThrow(() -> new RuntimeException("Application not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Application not found with id: " + applicationId));
         application.setStatus(status);
         return applicationMapper.toDTO(applicationRepository.save(application));
     }
