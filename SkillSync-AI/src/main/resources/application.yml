@@ -2,26 +2,34 @@ spring:
   application:
     name: SkillSync-AI
   datasource:
-    url: jdbc:postgresql://localhost:5454/vectordb?options=-c%20TimeZone=UTC
+    url: jdbc:postgresql://localhost:5454/vectordb?TimeZone=Asia/Kolkata
     username: root
     password: root
     driver-class-name: org.postgresql.Driver
-    hikari:
-      connection-init-sql: SET TIME ZONE 'UTC'
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect   
   ai:
     openai:
       api-key: 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
       base-url: https://openrouter.ai/api
       chat:
         options:
-          model: qwen/qwen3-coder:free
+          model: google/gemma-3-27b-it:free
           temperature: 0.7
+    # google:
+    #   genai:
+    #     api-key: AIzaSyDZ0MLb0yin9wbR2b7-ZKJ348BWYaLpKL4
+    #     chat:
+    #       options:
+    #         model: gemini-2.0-flash-exp
+    #         temperature: 0.7
+    #     embedding:
+    #       options:
+    #         model: text-embedding-004
 
 server:
   port: 9090
