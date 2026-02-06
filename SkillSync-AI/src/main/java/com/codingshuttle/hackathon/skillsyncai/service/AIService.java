@@ -16,9 +16,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.EnableRetry;
+import org.springframework.retry.annotation.Retryable;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@EnableRetry
 public class AIService {
 
     private final ChatClient.Builder chatClientBuilder;
@@ -44,6 +49,7 @@ public class AIService {
     public void storeResumeEmbedding(Long resumeId, String resumeContent, Map<String, Object> metadata) {
         log.info("Storing resume embedding for resumeId: {}", resumeId);
         metadata.put("resumeId", resumeId.toString());
+        metadata.put("docType", "RESUME");
         Document document = new Document(resumeContent, metadata);
         vectorStore.add(List.of(document));
         log.info("Successfully stored resume embedding for resumeId: {}", resumeId);
@@ -62,6 +68,7 @@ public class AIService {
     /**
      * Parses a resume file (PDF/Doc) and extracts structured data.
      */
+    @Retryable(retryFor = { Exception.class }, maxAttempts = 3, backoff = @Backoff(delay = 2000, multiplier = 2))
     public ParsedResumeDTO parseResume(Resource resumeFile) {
         log.info("Starting resume parsing for file: {}", resumeFile.getFilename());
         // 1. Extract Text using Tika

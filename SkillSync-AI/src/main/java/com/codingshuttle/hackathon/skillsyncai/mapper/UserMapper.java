@@ -11,6 +11,7 @@ import com.codingshuttle.hackathon.skillsyncai.entity.User;
 import com.codingshuttle.hackathon.skillsyncai.enums.UserRole;
 import com.codingshuttle.hackathon.skillsyncai.repository.CandidateRepository;
 import com.codingshuttle.hackathon.skillsyncai.repository.RecruiterRepository;
+import com.codingshuttle.hackathon.skillsyncai.repository.ResumeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +21,7 @@ public class UserMapper {
 
     private final CandidateRepository candidateRepository;
     private final RecruiterRepository recruiterRepository;
+    private final ResumeRepository resumeRepository;
 
     public User toEntity(UserCreateDTO dto) {
         User user = new User();
@@ -50,11 +52,16 @@ public class UserMapper {
         if (user.getRole() == UserRole.CANDIDATE) {
             Candidate candidate = candidateRepository.findByUserId(user.getId()).orElse(null);
             if (candidate != null) {
+                Long resumeId = resumeRepository.findByUserId(user.getId())
+                        .map(com.codingshuttle.hackathon.skillsyncai.entity.Resume::getId)
+                        .orElse(null);
+
                 candidateProfile = new CandidateProfileDTO(
                         candidate.getSkills(),
                         candidate.getExperienceYears(),
                         candidate.getHeadline(),
-                        candidate.getLocation());
+                        candidate.getLocation(),
+                        resumeId);
             }
         } else if (user.getRole() == UserRole.RECRUITER) {
             Recruiter recruiter = recruiterRepository.findByUserId(user.getId()).orElse(null);

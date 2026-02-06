@@ -33,12 +33,14 @@ public class ResumeController {
 
     @PostMapping("/upload")
     public ResponseEntity<ParsedResumeDTO> uploadResume(
-            @RequestHeader("X-User-Id") Long userId,
+            org.springframework.security.core.Authentication authentication,
             @RequestParam("file") MultipartFile file) throws IOException {
-        log.info("Received resume upload request for user: {}", userId);
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        Long userId = user.getId();
+        log.info("Received resume upload request for user: {} ({})", userId, email);
 
         if (user.getRole() != UserRole.CANDIDATE) {
             throw new BadRequestException("Only candidates can upload resumes.");
@@ -82,6 +84,24 @@ public class ResumeController {
         if (parsed.fullName() != null && user.getName() == null) {
             user.setName(parsed.fullName());
             userRepository.save(user);
+        }
+
+        // Generate and Store Embedding in Vector DB
+        try {
+            String resumeContent = "Candidate Name: " + (parsed.fullName() != null ? parsed.fullName() : "N/A") +
+                    "\nSkills: " + (parsed.skills() != null ? String.join(", ", parsed.skills()) : "N/A") +
+                    "\nExperience: " + (parsed.experienceYears() != null ? parsed.experienceYears() : 0) + " years" +
+                    "\nSummary: " + (parsed.summary() != null ? parsed.summary() : "N/A") +
+                    "\nEducation: " + (parsed.education() != null ? parsed.education() : "N/A");
+
+            java.util.Map<String, Object> metadata = new java.util.HashMap<>();
+            metadata.put("userId", userId);
+
+            aiService.storeResumeEmbedding(resume.getId(), resumeContent, metadata);
+            log.info("Resume embedding stored for resumeId: {}", resume.getId());
+        } catch (Exception e) {
+            log.error("Failed to store resume embedding for user: {}", userId, e);
+            // Don't fail the request, just log error
         }
 
         return ResponseEntity.ok(parsed);

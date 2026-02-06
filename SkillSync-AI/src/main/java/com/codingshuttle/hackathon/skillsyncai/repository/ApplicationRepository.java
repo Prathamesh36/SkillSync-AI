@@ -8,7 +8,19 @@ import java.util.List;
 
 @Repository
 public interface ApplicationRepository extends JpaRepository<Application, Long> {
-    List<Application> findByUserId(Long userId);
 
+    /**
+     * Check if a candidate has already applied for a specific job.
+     */
+    boolean existsByJobIdAndCandidateId(Long jobId, Long candidateId);
+
+    /**
+     * Find all applications by a specific candidate.
+     */
+    List<Application> findByCandidateId(Long candidateId);
+
+    /**
+     * Find all applications for a specific job.
+     */
     List<Application> findByJobId(Long jobId);
 }

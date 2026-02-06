@@ -1,27 +1,26 @@
 package com.codingshuttle.hackathon.skillsyncai.mapper;
 
-import com.codingshuttle.hackathon.skillsyncai.dto.ApplicationResponseDTO;
+import com.codingshuttle.hackathon.skillsyncai.dto.JobApplicationResponseDTO;
 import com.codingshuttle.hackathon.skillsyncai.entity.Application;
-import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
+/**
+ * Mapper for Application entity to JobApplicationResponseDTO.
+ */
 @Component
-@RequiredArgsConstructor
 public class ApplicationMapper {
 
-    private final ModelMapper modelMapper;
-
-    public ApplicationResponseDTO toDTO(Application application) {
-        return new ApplicationResponseDTO(
+    public JobApplicationResponseDTO toDTO(Application application) {
+        return new JobApplicationResponseDTO(
                 application.getId(),
-                application.getUser().getId(),
-                application.getUser().getName(),
                 application.getJob().getId(),
                 application.getJob().getTitle(),
+                application.getJob().getCompanyName(),
+                application.getCandidate().getId(),
+                application.getCandidate().getUser().getName(),
+                application.getResume().getId(),
                 application.getStatus(),
-                application.getMatchScore(),
-                application.getAiAnalysis(),
+                application.getMatchScoreSnapshot(),
                 application.getAppliedAt());
     }
 }

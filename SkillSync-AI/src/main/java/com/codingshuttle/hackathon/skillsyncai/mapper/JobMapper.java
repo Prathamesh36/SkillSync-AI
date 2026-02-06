@@ -4,14 +4,11 @@ import com.codingshuttle.hackathon.skillsyncai.dto.JobCreateDTO;
 import com.codingshuttle.hackathon.skillsyncai.dto.JobResponseDTO;
 import com.codingshuttle.hackathon.skillsyncai.entity.Job;
 import lombok.RequiredArgsConstructor;
-// import org.modelmapper.ModelMapper; // Removed
 import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
 public class JobMapper {
-
-    // private final ModelMapper modelMapper; // Removed
 
     public Job toEntity(JobCreateDTO dto) {
         Job job = new Job();
@@ -47,5 +44,30 @@ public class JobMapper {
                 job.isActive(),
                 job.getCreatedAt());
         return dto;
+    }
+
+    public void updateEntityFromDTO(JobCreateDTO dto, Job job) {
+        if (dto.title() != null)
+            job.setTitle(dto.title());
+        if (dto.description() != null)
+            job.setDescription(dto.description());
+        if (dto.companyName() != null)
+            job.setCompanyName(dto.companyName());
+        if (dto.location() != null)
+            job.setLocation(dto.location());
+        if (dto.salaryMin() != null)
+            job.setSalaryMin(dto.salaryMin());
+        if (dto.salaryMax() != null)
+            job.setSalaryMax(dto.salaryMax());
+        if (dto.currency() != null)
+            job.setCurrency(dto.currency());
+        if (dto.jobType() != null)
+            job.setJobType(dto.jobType());
+        if (dto.employmentType() != null)
+            job.setEmploymentType(dto.employmentType());
+        if (dto.requiredExperienceYears() != null)
+            job.setRequiredExperienceYears(dto.requiredExperienceYears());
+        if (dto.skillsRequired() != null)
+            job.setSkillsRequired(dto.skillsRequired());
     }
 }
