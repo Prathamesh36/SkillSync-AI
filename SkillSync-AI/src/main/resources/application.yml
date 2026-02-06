@@ -2,10 +2,12 @@ spring:
   application:
     name: SkillSync-AI
   datasource:
-    url: jdbc:postgresql://localhost:5432/skillsync
-    username: postgres
+    url: jdbc:postgresql://localhost:5454/vectordb?options=-c%20TimeZone=UTC
+    username: root
     password: root
     driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-init-sql: SET TIME ZONE 'UTC'
   jpa:
     hibernate:
       ddl-auto: update
@@ -20,12 +22,6 @@ spring:
         options:
           model: qwen/qwen3-coder:free
           temperature: 0.7
-    vectorstore:
-      pgvector:
-        index-type: HNSW
-        distance-type: COSINE_DISTANCE
-        dimensions: 1536
-        initialize-schema: true
 
 server:
   port: 9090

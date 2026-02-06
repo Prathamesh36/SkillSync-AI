@@ -8,11 +8,13 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +23,7 @@ public class AIService {
 
     private final ChatClient.Builder chatClientBuilder;
     private final EmbeddingModel embeddingModel;
+    private final VectorStore vectorStore;
 
     /**
      * Generates embedding vector for a given text.
@@ -33,6 +36,27 @@ public class AIService {
             embedding.add((double) f);
         }
         return embedding;
+    }
+
+    /**
+     * Stores a resume document in the vector store for similarity search.
+     */
+    public void storeResumeEmbedding(Long resumeId, String resumeContent, Map<String, Object> metadata) {
+        log.info("Storing resume embedding for resumeId: {}", resumeId);
+        metadata.put("resumeId", resumeId.toString());
+        Document document = new Document(resumeContent, metadata);
+        vectorStore.add(List.of(document));
+        log.info("Successfully stored resume embedding for resumeId: {}", resumeId);
+    }
+
+    /**
+     * Searches for similar resumes based on a job description or query text.
+     */
+    public List<Document> searchSimilarResumes(String query, int topK) {
+        log.info("Searching for similar resumes with query length: {}, topK: {}", query.length(), topK);
+        List<Document> results = vectorStore.similaritySearch(query);
+        log.info("Found {} similar resumes", results.size());
+        return results.stream().limit(topK).toList();
     }
 
     /**
