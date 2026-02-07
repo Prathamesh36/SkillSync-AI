@@ -19,8 +19,12 @@ import com.codingshuttle.hackathon.skillsyncai.repository.CandidateRepository;
 import com.codingshuttle.hackathon.skillsyncai.repository.InterviewScheduleRepository;
 import com.codingshuttle.hackathon.skillsyncai.repository.RecruiterRepository;
 import com.codingshuttle.hackathon.skillsyncai.repository.UserRepository;
+import com.codingshuttle.hackathon.skillsyncai.event.InterviewScheduledEvent;
+import com.codingshuttle.hackathon.skillsyncai.event.InterviewRescheduledEvent;
+import com.codingshuttle.hackathon.skillsyncai.event.InterviewCancelledEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +47,7 @@ public class InterviewScheduleService {
         private final UserRepository userRepository;
         private final CandidateRepository candidateRepository;
         private final RecruiterRepository recruiterRepository;
+        private final ApplicationEventPublisher eventPublisher;
 
         /**
          * Schedule an interview for a shortlisted candidate.
@@ -107,6 +112,10 @@ public class InterviewScheduleService {
                 applicationRepository.save(application);
 
                 log.info("Interview scheduled: interviewId={}, applicationId={}", saved.getId(), applicationId);
+
+                // 8. Publish event for async notification (email + calendar invite)
+                eventPublisher.publishEvent(new InterviewScheduledEvent(this, saved));
+
                 return toDTO(saved);
         }
 
@@ -167,6 +176,10 @@ public class InterviewScheduleService {
                 log.info("Interview rescheduled: interviewId={}, newDateTime={}", interviewId,
                                 request.newInterviewDateTime());
 
+                // 7. Publish event for async notification (updated calendar invite)
+                eventPublisher.publishEvent(new InterviewRescheduledEvent(
+                                this, saved, saved.getPreviousInterviewDateTime()));
+
                 return toDTO(saved);
         }
 
@@ -224,6 +237,9 @@ public class InterviewScheduleService {
 
                 log.info("Interview cancelled: interviewId={}, reason={}, applicationStatus reverted to SHORTLISTED",
                                 interviewId, request.reason());
+
+                // 6. Publish event for async notification (cancellation calendar invite)
+                eventPublisher.publishEvent(new InterviewCancelledEvent(this, saved, request.reason()));
 
                 return toDTO(saved);
         }

@@ -12,6 +12,17 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect   
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: prathmeshpatil950@gmail.com
+    password: lxov tehf hifo cgiq
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
   ai:
     openai:
       api-key: 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
@@ -30,6 +41,18 @@ spring:
     #     embedding:
     #       options:
     #         model: text-embedding-004
+
+  # mail:
+  #   host: smtp.gmail.com
+  #   port: 587
+  #   username: prathmeshpatil950@gmail.com
+  #   password: lxov tehf hifo cgiq
+  #   properties:
+  #     mail:
+  #       smtp:
+  #         auth: true
+  #         starttls:
+  #           enable: true
 
 server:
   port: 9090
