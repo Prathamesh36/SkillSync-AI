@@ -21,6 +21,10 @@ public class ApplicationMapper {
                 application.getResume().getId(),
                 application.getStatus(),
                 application.getMatchScoreSnapshot(),
-                application.getAppliedAt());
+                application.getAppliedAt(),
+                application.getCandidate().getUser().getEmail(),
+                application.getCandidate().getHeadline(),
+                application.getCandidate().getSkills(),
+                application.getCandidate().getLocation());
     }
 }

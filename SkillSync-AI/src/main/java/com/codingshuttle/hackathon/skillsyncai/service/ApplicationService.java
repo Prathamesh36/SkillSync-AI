@@ -121,9 +121,11 @@ public class ApplicationService {
     /**
      * Get all applications for a job (Recruiter only).
      * Validates that the recruiter owns the job.
+     * Optionally filters by status.
      */
-    public List<JobApplicationResponseDTO> getApplicationsForJob(Long jobId, String recruiterEmail) {
-        log.debug("Fetching applications for jobId={}, recruiterEmail={}", jobId, recruiterEmail);
+    public List<JobApplicationResponseDTO> getApplicationsForJob(Long jobId, String recruiterEmail,
+            ApplicationStatus status) {
+        log.debug("Fetching applications for jobId={}, recruiterEmail={}, status={}", jobId, recruiterEmail, status);
 
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new ResourceNotFoundException("Job not found with id: " + jobId));
@@ -134,7 +136,16 @@ public class ApplicationService {
             throw new AccessDeniedException("You are not authorized to view applications for this job.");
         }
 
-        return applicationRepository.findByJobId(jobId).stream()
+        List<Application> applications = applicationRepository.findByJobId(jobId);
+
+        // Filter by status if provided
+        if (status != null) {
+            applications = applications.stream()
+                    .filter(app -> app.getStatus() == status)
+                    .collect(Collectors.toList());
+        }
+
+        return applications.stream()
                 .map(applicationMapper::toDTO)
                 .collect(Collectors.toList());
     }
@@ -183,5 +194,40 @@ public class ApplicationService {
         if (newStatus == ApplicationStatus.APPLIED && currentStatus != ApplicationStatus.APPLIED) {
             throw new BadRequestException("Cannot revert status to APPLIED.");
         }
+    }
+
+    /**
+     * Shortlist a candidate for a job.
+     * Changes status from APPLIED to SHORTLISTED.
+     * 
+     * @param applicationId  the application to shortlist
+     * @param recruiterEmail email of the recruiter (for ownership validation)
+     * @return updated application details
+     */
+    @Transactional
+    public JobApplicationResponseDTO shortlistCandidate(Long applicationId, String recruiterEmail) {
+        log.info("Shortlisting application: applicationId={}, recruiterEmail={}", applicationId, recruiterEmail);
+
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Application not found with id: " + applicationId));
+
+        // Validate recruiter owns the job
+        if (!application.getJob().getPostedBy().getEmail().equals(recruiterEmail)) {
+            log.warn("Unauthorized shortlist attempt: recruiterEmail={} tried to shortlist applicationId={}",
+                    recruiterEmail, applicationId);
+            throw new AccessDeniedException("You are not authorized to shortlist this application.");
+        }
+
+        // Validate current status is APPLIED
+        if (application.getStatus() != ApplicationStatus.APPLIED) {
+            throw new BadRequestException("Can only shortlist applications with status APPLIED. Current status: "
+                    + application.getStatus());
+        }
+
+        application.setStatus(ApplicationStatus.SHORTLISTED);
+        Application updated = applicationRepository.save(application);
+        log.info("Application shortlisted: applicationId={}", applicationId);
+
+        return applicationMapper.toDTO(updated);
     }
 }

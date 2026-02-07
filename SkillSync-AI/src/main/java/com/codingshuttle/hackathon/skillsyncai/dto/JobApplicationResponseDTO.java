@@ -8,14 +8,18 @@ import java.time.LocalDateTime;
  * Response DTO for job application details.
  */
 public record JobApplicationResponseDTO(
-        Long applicationId,
-        Long jobId,
-        String jobTitle,
-        String companyName,
-        Long candidateId,
-        String candidateName,
-        Long resumeId,
-        ApplicationStatus status,
-        Double matchScoreSnapshot,
-        LocalDateTime appliedAt) {
+                Long applicationId,
+                Long jobId,
+                String jobTitle,
+                String companyName,
+                Long candidateId,
+                String candidateName,
+                Long resumeId,
+                ApplicationStatus status,
+                Double matchScoreSnapshot,
+                LocalDateTime appliedAt,
+                String candidateEmail,
+                String candidateHeadline,
+                java.util.List<String> candidateSkills,
+                String candidateLocation) {
 }
