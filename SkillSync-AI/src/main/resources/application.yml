@@ -1,6 +1,7 @@
 spring:
   application:
     name: SkillSync-AI
+    base-url: http://localhost:5173
   datasource:
     url: jdbc:postgresql://localhost:5454/vectordb?TimeZone=Asia/Kolkata
     username: root

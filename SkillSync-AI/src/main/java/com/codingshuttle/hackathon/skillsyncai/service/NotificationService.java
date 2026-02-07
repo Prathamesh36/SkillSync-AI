@@ -1,7 +1,10 @@
 package com.codingshuttle.hackathon.skillsyncai.service;
 
 import com.codingshuttle.hackathon.skillsyncai.entity.InterviewSchedule;
+import com.codingshuttle.hackathon.skillsyncai.entity.JobInvitation;
 import jakarta.mail.MessagingException;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +30,58 @@ public class NotificationService {
 
     private final JavaMailSender mailSender;
     private final CalendarInviteService calendarInviteService;
+
+    @Value("${spring.application.base-url:http://localhost:5173}")
+    private String baseUrl;
+
+    /**
+     * Send job invitation email to candidate.
+     */
+    @Async("notificationExecutor")
+    public void sendJobInvitationEmail(JobInvitation invitation) {
+        String to = invitation.getCandidate().getUser().getEmail();
+        String subject = "You're invited to apply: " + invitation.getJob().getTitle();
+
+        String acceptLink = baseUrl + "/invitations/accept?token=" + invitation.getInvitationToken();
+
+        String htmlBody = String.format(
+                """
+                        <html>
+                        <body>
+                            <h2>Job Invitation</h2>
+                            <p>Hello %s,</p>
+                            <p>You have been invited to apply for the position of <strong>%s</strong> at <strong>%s</strong>.</p>
+                            <p>Recruiter Message:</p>
+                            <blockquote>%s</blockquote>
+                            <p>Click the link below to accept the invitation and apply:</p>
+                            <a href="%s">Apply Now</a>
+                            <p><small>This link expires on %s</small></p>
+                        </body>
+                        </html>
+                        """,
+                invitation.getCandidate().getUser().getName(),
+                invitation.getJob().getTitle(),
+                invitation.getJob().getCompanyName(),
+                invitation.getMessage() != null ? invitation.getMessage() : "We think you're a great fit!",
+                acceptLink,
+                invitation.getExpiresAt().toString());
+
+        sendHtmlEmail(to, subject, htmlBody);
+    }
+
+    private void sendHtmlEmail(String to, String subject, String body) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(body, true);
+            mailSender.send(message);
+            log.info("Invitation email sent to: {}", to);
+        } catch (MessagingException e) {
+            log.error("Failed to send invitation email to {}: {}", to, e.getMessage());
+        }
+    }
 
     private static final DateTimeFormatter DISPLAY_DATE_FORMAT = DateTimeFormatter
             .ofPattern("EEEE, MMMM d, yyyy 'at' h:mm a");

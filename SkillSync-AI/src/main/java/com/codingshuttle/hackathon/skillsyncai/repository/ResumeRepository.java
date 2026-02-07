@@ -9,4 +9,7 @@ import java.util.Optional;
 @Repository
 public interface ResumeRepository extends JpaRepository<Resume, Long> {
     Optional<Resume> findByUserId(Long userId);
+
+    /** Get the most recent resume for a user */
+    Optional<Resume> findFirstByUserIdOrderByIdDesc(Long userId);
 }
