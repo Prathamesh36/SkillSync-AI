@@ -84,6 +84,24 @@ public class InterviewAiService {
             Respond with ONLY the feedback text, nothing else.
             """;
 
+    private static final String TOPIC_BASED_QUESTION_PROMPT = """
+            You are conducting a technical interview focused ONLY on the following topics:
+            %s
+
+            Difficulty level: %s
+            Question number: %d of 5
+            Previous performance: %s
+
+            Rules:
+            - Ask ONE practical, real-world question related to the specified topics
+            - Do NOT ask questions outside the specified topics
+            - Match the difficulty level: %s
+            - If previous answers were weak, ask an easier question from the topics
+            - If previous answers were strong, increase difficulty within the topics
+
+            Respond with ONLY the question text, nothing else.
+            """;
+
     // ================ PUBLIC METHODS ================
 
     /**
@@ -169,6 +187,51 @@ public class InterviewAiService {
         log.debug("Generated final feedback: {}", response);
         return response != null ? response.trim()
                 : "Interview completed. Review your answers for areas of improvement.";
+    }
+
+    /**
+     * Generate the first question for a topic-based interview.
+     */
+    public String generateFirstQuestionForTopic(List<String> topics, String difficulty) {
+        log.info("Generating first topic-based question. Topics: {}, Difficulty: {}", topics, difficulty);
+
+        String topicsStr = String.join(", ", topics);
+        String prompt = String.format(TOPIC_BASED_QUESTION_PROMPT,
+                topicsStr, difficulty, 1, "First question - no previous answers", difficulty);
+
+        ChatClient chatClient = chatClientBuilder.build();
+        String response = chatClient.prompt()
+                .system(SYSTEM_PROMPT)
+                .user(prompt)
+                .call()
+                .content();
+
+        log.debug("Generated first topic question: {}", response);
+        return response != null ? response.trim()
+                : "Explain a core concept from one of your selected topics.";
+    }
+
+    /**
+     * Generate the next question for a topic-based interview.
+     */
+    public String generateNextQuestionForTopic(List<String> topics, String difficulty, int questionNumber,
+            String performanceSummary) {
+        log.info("Generating topic question {}. Topics: {}, Difficulty: {}", questionNumber, topics, difficulty);
+
+        String topicsStr = String.join(", ", topics);
+        String prompt = String.format(TOPIC_BASED_QUESTION_PROMPT,
+                topicsStr, difficulty, questionNumber, performanceSummary, difficulty);
+
+        ChatClient chatClient = chatClientBuilder.build();
+        String response = chatClient.prompt()
+                .system(SYSTEM_PROMPT)
+                .user(prompt)
+                .call()
+                .content();
+
+        log.debug("Generated topic question {}: {}", questionNumber, response);
+        return response != null ? response.trim()
+                : "Describe a practical use case from your selected topics.";
     }
 
     // ================ HELPER METHODS ================

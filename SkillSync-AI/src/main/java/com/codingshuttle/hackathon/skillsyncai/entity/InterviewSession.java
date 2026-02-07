@@ -62,7 +62,32 @@ public class InterviewSession {
     /**
      * Compact resume summary used for AI prompts.
      * Stored to avoid re-computing during session.
+     * Only used for RESUME_BASED mode.
      */
     @Column(columnDefinition = "TEXT")
     private String resumeSummary;
+
+    /**
+     * Interview mode: RESUME_BASED or TOPIC_BASED.
+     * Defaults to RESUME_BASED for backward compatibility.
+     * Nullable to support existing records during migration.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column
+    private com.codingshuttle.hackathon.skillsyncai.enums.InterviewMode interviewMode = com.codingshuttle.hackathon.skillsyncai.enums.InterviewMode.RESUME_BASED;
+
+    /**
+     * JSON array of topics for topic-based interviews.
+     * Example: ["Java", "Spring Boot", "SQL"]
+     * Only used for TOPIC_BASED mode.
+     */
+    @Column(columnDefinition = "TEXT")
+    private String topicsJson;
+
+    /**
+     * Difficulty level for topic-based interviews.
+     * Only used for TOPIC_BASED mode.
+     */
+    @Enumerated(EnumType.STRING)
+    private com.codingshuttle.hackathon.skillsyncai.enums.DifficultyLevel difficultyLevel;
 }

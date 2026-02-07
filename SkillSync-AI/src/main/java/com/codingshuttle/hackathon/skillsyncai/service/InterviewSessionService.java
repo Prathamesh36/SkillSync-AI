@@ -91,6 +91,55 @@ public class InterviewSessionService {
     }
 
     /**
+     * Start a new topic-based mock interview session.
+     */
+    @Transactional
+    public StartInterviewResponseDTO startTopicBasedInterview(String candidateEmail, List<String> topics,
+            com.codingshuttle.hackathon.skillsyncai.enums.DifficultyLevel difficulty) {
+        log.info("Starting topic-based interview for candidate: {}. Topics: {}, Difficulty: {}", candidateEmail,
+                topics, difficulty);
+
+        // 1. Validate inputs
+        if (topics == null || topics.isEmpty()) {
+            throw new BadRequestException("Topics list cannot be empty");
+        }
+
+        // 2. Get candidate
+        User user = userRepository.findByEmail(candidateEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Candidate candidate = candidateRepository.findByUserId(user.getId())
+                .orElseThrow(
+                        () -> new BadRequestException("Candidate profile not found. Please complete your profile."));
+
+        // 3. Generate first question using topics
+        String firstQuestion = aiService.generateFirstQuestionForTopic(topics, difficulty.name());
+
+        // 4. Create session with topic-based mode
+        InterviewSession session = new InterviewSession();
+        session.setCandidate(candidate);
+        session.setStatus(InterviewSessionStatus.STARTED);
+        session.setInterviewMode(com.codingshuttle.hackathon.skillsyncai.enums.InterviewMode.TOPIC_BASED);
+        session.setTopicsJson(toJson(topics));
+        session.setDifficultyLevel(difficulty);
+        session.setQuestionCount(1);
+        InterviewSession savedSession = sessionRepository.save(session);
+
+        // 5. Create transcript with first question
+        InterviewTranscript transcript = new InterviewTranscript();
+        transcript.setInterviewSession(savedSession);
+
+        List<Map<String, String>> messages = new ArrayList<>();
+        messages.add(createMessage("INTERVIEWER", firstQuestion));
+        transcript.setMessagesJson(toJson(messages));
+        transcript.setEvaluationsJson("[]");
+        transcriptRepository.save(transcript);
+
+        log.info("Topic-based interview session started: sessionId={}", savedSession.getId());
+        return new StartInterviewResponseDTO(savedSession.getId(), firstQuestion);
+    }
+
+    /**
      * Submit an answer and get the next question.
      */
     @Transactional
@@ -140,15 +189,32 @@ public class InterviewSessionService {
         if (!interviewComplete) {
             // Generate next question based on performance
             String performanceSummary = buildPerformanceSummary(evaluations);
-            int experienceYears = session.getCandidate().getExperienceYears() != null
-                    ? session.getCandidate().getExperienceYears()
-                    : 0;
 
-            nextQuestion = aiService.generateNextQuestion(
-                    session.getResumeSummary(),
-                    experienceYears,
-                    session.getQuestionCount() + 1,
-                    performanceSummary);
+            // Detect interview mode and generate appropriate question
+            if (session.getInterviewMode() == com.codingshuttle.hackathon.skillsyncai.enums.InterviewMode.TOPIC_BASED) {
+                // Topic-based: use topics and difficulty
+                List<String> topics = parseTopics(session.getTopicsJson());
+                String difficulty = session.getDifficultyLevel() != null
+                        ? session.getDifficultyLevel().name()
+                        : "MEDIUM";
+
+                nextQuestion = aiService.generateNextQuestionForTopic(
+                        topics,
+                        difficulty,
+                        session.getQuestionCount() + 1,
+                        performanceSummary);
+            } else {
+                // Resume-based: use resume summary
+                int experienceYears = session.getCandidate().getExperienceYears() != null
+                        ? session.getCandidate().getExperienceYears()
+                        : 0;
+
+                nextQuestion = aiService.generateNextQuestion(
+                        session.getResumeSummary(),
+                        experienceYears,
+                        session.getQuestionCount() + 1,
+                        performanceSummary);
+            }
 
             // Add next question to transcript
             messages.add(createMessage("INTERVIEWER", nextQuestion));
@@ -171,7 +237,7 @@ public class InterviewSessionService {
     /**
      * End the interview and generate final feedback.
      */
-    @Transactional
+    @Transactional(readOnly = true)
     public EndInterviewResponseDTO endInterview(UUID sessionId, String candidateEmail) {
         log.info("Ending interview session: {}", sessionId);
 
@@ -219,6 +285,26 @@ public class InterviewSessionService {
 
         log.info("Interview completed: sessionId={}, finalScore={}", sessionId, finalScore);
         return new EndInterviewResponseDTO(finalScore, finalFeedback);
+    }
+
+    /**
+     * Get the full transcript (messages and evaluations) for a session.
+     */
+    @Transactional(readOnly = true)
+    public InterviewTranscriptResponseDTO getTranscript(UUID sessionId, String candidateEmail) {
+        log.info("Fetching transcript for session: {}", sessionId);
+
+        // 1. Validate session ownership
+        getAndValidateSession(sessionId, candidateEmail);
+
+        // 2. Get transcript
+        InterviewTranscript transcript = transcriptRepository.findByInterviewSessionId(sessionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Transcript not found for sessionId: " + sessionId));
+
+        // 3. Parse and return
+        return new InterviewTranscriptResponseDTO(
+                parseMessages(transcript.getMessagesJson()),
+                parseEvaluations(transcript.getEvaluationsJson()));
     }
 
     // ================ HELPER METHODS ================
@@ -303,6 +389,16 @@ public class InterviewSessionService {
         } catch (Exception e) {
             log.error("Failed to serialize to JSON", e);
             return "[]";
+        }
+    }
+
+    private List<String> parseTopics(String json) {
+        try {
+            return objectMapper.readValue(json, new TypeReference<List<String>>() {
+            });
+        } catch (Exception e) {
+            log.warn("Failed to parse topics JSON", e);
+            return List.of();
         }
     }
 }

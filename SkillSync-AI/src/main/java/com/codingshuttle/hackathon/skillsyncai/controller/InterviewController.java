@@ -73,4 +73,40 @@ public class InterviewController {
         EndInterviewResponseDTO response = interviewService.endInterview(sessionId, email);
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * Get the full interview transcript.
+     * GET /api/interviews/mock/{sessionId}/transcript
+     */
+    @GetMapping("/{sessionId}/transcript")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    public ResponseEntity<InterviewTranscriptResponseDTO> getTranscript(
+            Authentication authentication,
+            @PathVariable UUID sessionId) {
+
+        String email = authentication.getName();
+        log.info("Fetching transcript for session: {}", sessionId);
+
+        InterviewTranscriptResponseDTO response = interviewService.getTranscript(sessionId, email);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Start a new topic-based mock interview session.
+     * POST /api/interviews/mock/topic/start
+     */
+    @PostMapping("/topic/start")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    public ResponseEntity<StartInterviewResponseDTO> startTopicInterview(
+            Authentication authentication,
+            @Valid @RequestBody StartTopicInterviewRequestDTO request) {
+
+        String email = authentication.getName();
+        log.info("Starting topic-based interview for: {}, Topics: {}, Difficulty: {}",
+                email, request.topics(), request.difficulty());
+
+        StartInterviewResponseDTO response = interviewService.startTopicBasedInterview(
+                email, request.topics(), request.difficulty());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
 }
