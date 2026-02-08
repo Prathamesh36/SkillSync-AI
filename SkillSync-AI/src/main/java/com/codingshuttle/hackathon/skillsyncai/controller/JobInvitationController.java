@@ -25,81 +25,82 @@ import java.util.List;
  * - POST /invitations/{token}/decline - Candidate declines
  */
 @RestController
+@RequestMapping("/api")
 @RequiredArgsConstructor
 @Slf4j
 public class JobInvitationController {
 
-    private final JobInvitationService jobInvitationService;
+        private final JobInvitationService jobInvitationService;
 
-    /**
-     * Recruiter invites a candidate to apply for a job.
-     */
-    @PostMapping("/jobs/{jobId}/invite")
-    @PreAuthorize("hasRole('RECRUITER')")
-    public ResponseEntity<InvitationResponseDTO> inviteCandidate(
-            Authentication authentication,
-            @PathVariable Long jobId,
-            @Valid @RequestBody InviteCandidateRequestDTO request) {
+        /**
+         * Recruiter invites a candidate to apply for a job.
+         */
+        @PostMapping("/jobs/{jobId}/invite")
+        @PreAuthorize("hasRole('RECRUITER')")
+        public ResponseEntity<InvitationResponseDTO> inviteCandidate(
+                        Authentication authentication,
+                        @PathVariable Long jobId,
+                        @Valid @RequestBody InviteCandidateRequestDTO request) {
 
-        String recruiterEmail = authentication.getName();
-        log.info("Invite request: jobId={}, candidateId={}, recruiter={}",
-                jobId, request.candidateId(), recruiterEmail);
+                String recruiterEmail = authentication.getName();
+                log.info("Invite request: jobId={}, candidateId={}, recruiter={}",
+                                jobId, request.candidateId(), recruiterEmail);
 
-        InvitationResponseDTO response = jobInvitationService.inviteCandidate(
-                jobId, request, recruiterEmail);
+                InvitationResponseDTO response = jobInvitationService.inviteCandidate(
+                                jobId, request, recruiterEmail);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
+                return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        }
 
-    /**
-     * Candidate views all their invitations.
-     */
-    @GetMapping("/candidates/me/invitations")
-    @PreAuthorize("hasRole('CANDIDATE')")
-    public ResponseEntity<List<InvitationResponseDTO>> getCandidateInvitations(
-            Authentication authentication) {
+        /**
+         * Candidate views all their invitations.
+         */
+        @GetMapping("/candidates/me/invitations")
+        @PreAuthorize("hasRole('CANDIDATE')")
+        public ResponseEntity<List<InvitationResponseDTO>> getCandidateInvitations(
+                        Authentication authentication) {
 
-        String candidateEmail = authentication.getName();
-        List<InvitationResponseDTO> invitations = jobInvitationService
-                .getCandidateInvitations(candidateEmail);
+                String candidateEmail = authentication.getName();
+                List<InvitationResponseDTO> invitations = jobInvitationService
+                                .getCandidateInvitations(candidateEmail);
 
-        return ResponseEntity.ok(invitations);
-    }
+                return ResponseEntity.ok(invitations);
+        }
 
-    /**
-     * Candidate accepts an invitation using the secure token.
-     * Creates a JobApplication.
-     */
-    @PostMapping("/invitations/{token}/accept")
-    @PreAuthorize("hasRole('CANDIDATE')")
-    public ResponseEntity<InvitationAcceptResponseDTO> acceptInvitation(
-            Authentication authentication,
-            @PathVariable String token) {
+        /**
+         * Candidate accepts an invitation using the secure token.
+         * Creates a JobApplication.
+         */
+        @PostMapping("/invitations/{token}/accept")
+        @PreAuthorize("hasRole('CANDIDATE')")
+        public ResponseEntity<InvitationAcceptResponseDTO> acceptInvitation(
+                        Authentication authentication,
+                        @PathVariable String token) {
 
-        String candidateEmail = authentication.getName();
-        log.info("Accept invitation: token={}, candidate={}", token, candidateEmail);
+                String candidateEmail = authentication.getName();
+                log.info("Accept invitation: token={}, candidate={}", token, candidateEmail);
 
-        InvitationAcceptResponseDTO response = jobInvitationService
-                .acceptInvitation(token, candidateEmail);
+                InvitationAcceptResponseDTO response = jobInvitationService
+                                .acceptInvitation(token, candidateEmail);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
+                return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        }
 
-    /**
-     * Candidate declines an invitation using the secure token.
-     */
-    @PostMapping("/invitations/{token}/decline")
-    @PreAuthorize("hasRole('CANDIDATE')")
-    public ResponseEntity<InvitationResponseDTO> declineInvitation(
-            Authentication authentication,
-            @PathVariable String token) {
+        /**
+         * Candidate declines an invitation using the secure token.
+         */
+        @PostMapping("/invitations/{token}/decline")
+        @PreAuthorize("hasRole('CANDIDATE')")
+        public ResponseEntity<InvitationResponseDTO> declineInvitation(
+                        Authentication authentication,
+                        @PathVariable String token) {
 
-        String candidateEmail = authentication.getName();
-        log.info("Decline invitation: token={}, candidate={}", token, candidateEmail);
+                String candidateEmail = authentication.getName();
+                log.info("Decline invitation: token={}, candidate={}", token, candidateEmail);
 
-        InvitationResponseDTO response = jobInvitationService
-                .declineInvitation(token, candidateEmail);
+                InvitationResponseDTO response = jobInvitationService
+                                .declineInvitation(token, candidateEmail);
 
-        return ResponseEntity.ok(response);
-    }
+                return ResponseEntity.ok(response);
+        }
 }

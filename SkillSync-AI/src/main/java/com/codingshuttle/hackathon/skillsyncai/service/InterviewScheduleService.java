@@ -289,6 +289,24 @@ public class InterviewScheduleService {
         }
 
         /**
+         * Get all interviews for a verified recruiter.
+         */
+        public List<InterviewResponseDTO> getInterviewsForRecruiter(String recruiterEmail) {
+                log.debug("Fetching interviews for recruiter: {}", recruiterEmail);
+
+                User user = userRepository.findByEmail(recruiterEmail)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "User not found with email: " + recruiterEmail));
+
+                Recruiter recruiter = recruiterRepository.findByUserId(user.getId())
+                                .orElseThrow(() -> new ResourceNotFoundException("Recruiter profile not found"));
+
+                return interviewScheduleRepository.findByRecruiterId(recruiter.getId()).stream()
+                                .map(this::toDTO)
+                                .collect(Collectors.toList());
+        }
+
+        /**
          * Convert InterviewSchedule entity to DTO.
          */
         private InterviewResponseDTO toDTO(InterviewSchedule schedule) {

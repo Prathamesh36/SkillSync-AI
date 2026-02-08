@@ -25,6 +25,8 @@ public class ApplicationMapper {
                 application.getCandidate().getUser().getEmail(),
                 application.getCandidate().getHeadline(),
                 application.getCandidate().getSkills(),
-                application.getCandidate().getLocation());
+                application.getCandidate().getLocation(),
+                application.getCandidate().getExperienceYears(),
+                application.getAiAnalysis());
     }
 }

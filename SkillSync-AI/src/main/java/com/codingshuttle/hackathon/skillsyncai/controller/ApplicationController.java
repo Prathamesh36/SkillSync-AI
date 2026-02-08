@@ -3,6 +3,7 @@ package com.codingshuttle.hackathon.skillsyncai.controller;
 import com.codingshuttle.hackathon.skillsyncai.dto.InterviewResponseDTO;
 import com.codingshuttle.hackathon.skillsyncai.dto.JobApplicationRequestDTO;
 import com.codingshuttle.hackathon.skillsyncai.dto.JobApplicationResponseDTO;
+import com.codingshuttle.hackathon.skillsyncai.dto.RecruiterStatsDTO;
 import com.codingshuttle.hackathon.skillsyncai.dto.ScheduleInterviewRequestDTO;
 import com.codingshuttle.hackathon.skillsyncai.dto.StatusUpdateRequestDTO;
 import com.codingshuttle.hackathon.skillsyncai.service.ApplicationService;
@@ -88,6 +89,19 @@ public class ApplicationController {
     }
 
     /**
+     * Recruiter views ALL applications across all their jobs.
+     * GET /recruiter/applications
+     */
+    @GetMapping("/api/recruiter/applications")
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<List<JobApplicationResponseDTO>> getAllJobApplicationsForRecruiter(
+            Authentication authentication) {
+        String email = authentication.getName();
+        log.debug("Fetching all applications for recruiter: {}", email);
+        return ResponseEntity.ok(applicationService.getApplicationsForRecruiter(email));
+    }
+
+    /**
      * Recruiter views scheduled interviews for a job.
      * GET /recruiter/jobs/{jobId}/interviews
      */
@@ -100,6 +114,30 @@ public class ApplicationController {
         String email = authentication.getName();
         log.debug("Fetching interviews for jobId={}, recruiter={}", jobId, email);
         return ResponseEntity.ok(interviewScheduleService.getRecruiterInterviewsForJob(jobId, email));
+    }
+
+    /**
+     * Recruiter views ALL their scheduled interviews across all jobs.
+     * GET /recruiter/interviews
+     */
+    @GetMapping("/api/recruiter/interviews")
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<List<InterviewResponseDTO>> getAllRecruiterInterviews(Authentication authentication) {
+        String email = authentication.getName();
+        log.debug("Fetching all interviews for recruiter: {}", email);
+        return ResponseEntity.ok(interviewScheduleService.getInterviewsForRecruiter(email));
+    }
+
+    /**
+     * Recruiter views dashboard stats.
+     * GET /recruiter/stats
+     */
+    @GetMapping("/api/recruiter/stats")
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<RecruiterStatsDTO> getRecruiterStats(Authentication authentication) {
+        String email = authentication.getName();
+        log.debug("Fetching stats for recruiter: {}", email);
+        return ResponseEntity.ok(applicationService.getRecruiterStats(email));
     }
 
     /**

@@ -45,6 +45,15 @@ public class UserMapper {
             user.setPortfolioUrl(dto.portfolioUrl());
     }
 
+    public void updateRecruiter(Recruiter recruiter, UserUpdateDTO dto) {
+        if (dto.companyName() != null)
+            recruiter.setCompanyName(dto.companyName());
+        if (dto.designation() != null)
+            recruiter.setDesignation(dto.designation());
+        if (dto.companyWebsite() != null)
+            recruiter.setCompanyWebsite(dto.companyWebsite());
+    }
+
     public UserResponseDTO toDTO(User user) {
         CandidateProfileDTO candidateProfile = null;
         RecruiterProfileDTO recruiterProfile = null;

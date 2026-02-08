@@ -14,7 +14,7 @@ public class JobMapper {
         Job job = new Job();
         job.setTitle(dto.title());
         job.setDescription(dto.description());
-        job.setCompanyName(dto.companyName());
+        // Company Name is set by Controller from Recruiter Profile
         job.setLocation(dto.location());
         job.setSalaryMin(dto.salaryMin());
         job.setSalaryMax(dto.salaryMax());
@@ -51,8 +51,6 @@ public class JobMapper {
             job.setTitle(dto.title());
         if (dto.description() != null)
             job.setDescription(dto.description());
-        if (dto.companyName() != null)
-            job.setCompanyName(dto.companyName());
         if (dto.location() != null)
             job.setLocation(dto.location());
         if (dto.salaryMin() != null)

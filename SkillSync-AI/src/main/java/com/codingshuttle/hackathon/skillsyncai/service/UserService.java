@@ -87,6 +87,29 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
         userMapper.updateEntity(user, dto);
+
+        if (user.getRole() == com.codingshuttle.hackathon.skillsyncai.enums.UserRole.RECRUITER) {
+            Recruiter recruiter = recruiterRepository.findByUserId(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Recruiter profile not found for user: " + id));
+            userMapper.updateRecruiter(recruiter, dto);
+            recruiterRepository.save(recruiter);
+        } else if (user.getRole() == com.codingshuttle.hackathon.skillsyncai.enums.UserRole.CANDIDATE) {
+            Candidate candidate = candidateRepository.findByUserId(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Candidate profile not found for user: " + id));
+            // Assuming similar update logic for candidate exists or needs to be added here
+            // if not already handled
+            // For now, focusing on Recruiter as requested
+            if (dto.skills() != null)
+                candidate.setSkills(dto.skills());
+            if (dto.experienceYears() != null)
+                candidate.setExperienceYears(dto.experienceYears());
+            if (dto.headline() != null)
+                candidate.setHeadline(dto.headline());
+            if (dto.location() != null)
+                candidate.setLocation(dto.location());
+            candidateRepository.save(candidate);
+        }
+
         return userMapper.toDTO(userRepository.save(user));
     }
 

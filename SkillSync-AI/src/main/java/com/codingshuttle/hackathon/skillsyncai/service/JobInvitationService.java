@@ -64,9 +64,6 @@ public class JobInvitationService {
         @Transactional
         public InvitationResponseDTO inviteCandidate(Long jobId, InviteCandidateRequestDTO request,
                         String recruiterEmail) {
-                log.info("Inviting candidate: jobId={}, candidateId={}, recruiterEmail={}",
-                                jobId, request.candidateId(), recruiterEmail);
-
                 // 1. Validate job exists
                 Job job = jobRepository.findById(jobId)
                                 .orElseThrow(() -> new ResourceNotFoundException("Job not found with id: " + jobId));
@@ -276,6 +273,7 @@ public class JobInvitationService {
                                 invitation.getJob().getCompanyName(),
                                 invitation.getInvitedBy().getUser().getName(),
                                 invitation.getMessage(),
+                                invitation.getInvitationToken(),
                                 invitation.getStatus(),
                                 invitation.getInvitedAt(),
                                 invitation.getExpiresAt(),

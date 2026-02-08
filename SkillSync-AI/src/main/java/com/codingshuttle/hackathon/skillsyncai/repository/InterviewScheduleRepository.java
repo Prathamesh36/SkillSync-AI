@@ -29,4 +29,12 @@ public interface InterviewScheduleRepository extends JpaRepository<InterviewSche
      * Find all interviews for a specific job.
      */
     List<InterviewSchedule> findByJobApplicationJobId(Long jobId);
+
+    /**
+     * Find all interviews for a verified recruiter.
+     */
+    List<InterviewSchedule> findByRecruiterId(Long recruiterId);
+
+    long countByRecruiterIdAndStatus(Long recruiterId,
+            com.codingshuttle.hackathon.skillsyncai.enums.InterviewScheduleStatus status);
 }

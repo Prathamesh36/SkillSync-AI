@@ -21,4 +21,5 @@ public class MatchedCandidateDTO {
     private String location;
     private Double matchScore;
     private String explanation;
+    private String invitationStatus; // SENT, ACCEPTED, DECLINED, EXPIRED, null
 }

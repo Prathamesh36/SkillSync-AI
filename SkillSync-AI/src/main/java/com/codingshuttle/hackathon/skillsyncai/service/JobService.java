@@ -44,6 +44,10 @@ public class JobService {
                 return jobRepository.findAll();
         }
 
+        public List<Job> getJobsByRecruiter(com.codingshuttle.hackathon.skillsyncai.entity.User recruiter) {
+                return jobRepository.findByPostedBy(recruiter);
+        }
+
         @Transactional
         public Job updateJob(Long id, Job updatedDetails) {
                 Job existingJob = getJob(id);

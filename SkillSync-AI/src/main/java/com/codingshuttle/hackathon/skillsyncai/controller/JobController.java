@@ -28,6 +28,7 @@ public class JobController {
 
     private final JobService jobService;
     private final UserRepository userRepository;
+    private final com.codingshuttle.hackathon.skillsyncai.repository.RecruiterRepository recruiterRepository;
     private final JobMapper jobMapper;
 
     @PostMapping
@@ -37,11 +38,36 @@ public class JobController {
             @Valid @RequestBody JobCreateDTO dto) {
 
         String email = authentication.getName();
-        User recruiter = userRepository.findByEmail(email)
+        User recruiterUser = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Recruiter not found with email: " + email));
 
+        com.codingshuttle.hackathon.skillsyncai.entity.Recruiter recruiterProfile = recruiterRepository
+                .findByUserId(recruiterUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Recruiter profile not found"));
+
+        List<String> missingFields = new java.util.ArrayList<>();
+        if (recruiterUser.getName() == null || recruiterUser.getName().trim().isEmpty())
+            missingFields.add("Name");
+        if (recruiterUser.getBio() == null || recruiterUser.getBio().trim().isEmpty())
+            missingFields.add("Bio");
+        if (recruiterUser.getLinkedInUrl() == null || recruiterUser.getLinkedInUrl().trim().isEmpty())
+            missingFields.add("LinkedIn URL");
+
+        if (recruiterProfile.getCompanyName() == null || recruiterProfile.getCompanyName().trim().isEmpty())
+            missingFields.add("Company Name");
+        if (recruiterProfile.getDesignation() == null || recruiterProfile.getDesignation().trim().isEmpty())
+            missingFields.add("Designation");
+        if (recruiterProfile.getCompanyWebsite() == null || recruiterProfile.getCompanyWebsite().trim().isEmpty())
+            missingFields.add("Company Website");
+
+        if (!missingFields.isEmpty()) {
+            throw new com.codingshuttle.hackathon.skillsyncai.exception.BadRequestException(
+                    "Profile must be 100% complete to post a job. Missing: " + String.join(", ", missingFields));
+        }
+
         Job job = jobMapper.toEntity(dto);
-        job.setPostedBy(recruiter);
+        job.setPostedBy(recruiterUser);
+        job.setCompanyName(recruiterProfile.getCompanyName());
 
         Job created = jobService.createJob(job);
         return ResponseEntity.status(HttpStatus.CREATED).body(jobMapper.toDTO(created));
@@ -51,6 +77,16 @@ public class JobController {
     public ResponseEntity<JobResponseDTO> getJob(@PathVariable Long id) {
         Job job = jobService.getJob(id);
         return ResponseEntity.ok(jobMapper.toDTO(job));
+    }
+
+    @GetMapping("/my")
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<List<JobResponseDTO>> getMyJobs(Authentication authentication) {
+        String email = authentication.getName();
+        User recruiter = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Recruiter not found"));
+        List<Job> jobs = jobService.getJobsByRecruiter(recruiter);
+        return ResponseEntity.ok(jobs.stream().map(jobMapper::toDTO).collect(Collectors.toList()));
     }
 
     @GetMapping

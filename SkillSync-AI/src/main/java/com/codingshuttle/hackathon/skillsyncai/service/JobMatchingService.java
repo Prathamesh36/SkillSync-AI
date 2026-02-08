@@ -10,6 +10,11 @@ import com.codingshuttle.hackathon.skillsyncai.repository.CandidateRepository;
 import com.codingshuttle.hackathon.skillsyncai.repository.JobRepository;
 import com.codingshuttle.hackathon.skillsyncai.repository.MatchResultRepository;
 import com.codingshuttle.hackathon.skillsyncai.repository.ResumeRepository;
+import com.codingshuttle.hackathon.skillsyncai.repository.ApplicationRepository;
+import com.codingshuttle.hackathon.skillsyncai.repository.JobInvitationRepository;
+import com.codingshuttle.hackathon.skillsyncai.entity.Application;
+import com.codingshuttle.hackathon.skillsyncai.entity.JobInvitation;
+import com.codingshuttle.hackathon.skillsyncai.enums.JobInvitationStatus;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +37,8 @@ public class JobMatchingService {
     private final CandidateRepository candidateRepository;
     private final AiExplanationService aiExplanationService;
     private final MatchResultRepository matchResultRepository;
+    private final ApplicationRepository applicationRepository;
+    private final JobInvitationRepository jobInvitationRepository;
 
     @Transactional
     public List<MatchedCandidateDTO> getMatchedCandidates(Long jobId, int topK) {
@@ -129,33 +136,61 @@ public class JobMatchingService {
         // Limit to topK
         List<MatchedCandidateDTO> topResults = results.stream().limit(topK).collect(Collectors.toList());
 
-        // 6. Explanation & Persistence (Top 5 only)
-        for (int i = 0; i < Math.min(topResults.size(), 5); i++) {
+        // 6. Explanation & Persistence (Top 5 only) & 7. Populate Invitation Status
+        List<Long> candidateIds = topResults.stream().map(MatchedCandidateDTO::getCandidateId).toList();
+
+        List<Application> applications = applicationRepository.findByJobIdAndCandidateIdIn(jobId, candidateIds);
+        Set<Long> appliedCandidateIds = applications.stream().map(a -> a.getCandidate().getId())
+                .collect(Collectors.toSet());
+
+        List<JobInvitation> invitations = jobInvitationRepository.findByJobIdAndCandidateIdIn(jobId, candidateIds);
+        // Map candidateId -> latest meaningful status
+        Map<Long, JobInvitationStatus> invitationStatusMap = new HashMap<>();
+        for (JobInvitation inv : invitations) {
+            // Priority: SENT > others. If duplicate, keep SENT.
+            // Simplified logic: just store the status. If multiple, last one wins
+            // (refinement needed if many invites)
+            // But usually unique per job-candidate for SENT.
+            invitationStatusMap.put(inv.getCandidate().getId(), inv.getStatus());
+        }
+
+        for (int i = 0; i < topResults.size(); i++) {
             MatchedCandidateDTO dto = topResults.get(i);
-            Candidate candidate = candidateRepository.findById(dto.getCandidateId()).orElse(null);
 
-            if (candidate != null) {
-                // Check if we have a recent match result to reuse explanation
-                Optional<MatchResult> existingMatch = matchResultRepository.findByJobIdAndCandidateId(jobId,
-                        candidate.getId());
+            // Set invitation status
+            if (appliedCandidateIds.contains(dto.getCandidateId())) {
+                dto.setInvitationStatus("APPLIED");
+            } else if (invitationStatusMap.containsKey(dto.getCandidateId())) {
+                dto.setInvitationStatus(invitationStatusMap.get(dto.getCandidateId()).name());
+            }
 
-                String explanation;
-                if (existingMatch.isPresent() && existingMatch.get().getExplanation() != null) {
-                    explanation = existingMatch.get().getExplanation();
-                } else {
-                    explanation = aiExplanationService.generateExplanation(job, candidate);
+            // Only generate explanation for top 5
+            if (i < 5) {
+                Candidate candidate = candidateRepository.findById(dto.getCandidateId()).orElse(null);
+
+                if (candidate != null) {
+                    // Check if we have a recent match result to reuse explanation
+                    Optional<MatchResult> existingMatch = matchResultRepository.findByJobIdAndCandidateId(jobId,
+                            candidate.getId());
+
+                    String explanation;
+                    if (existingMatch.isPresent() && existingMatch.get().getExplanation() != null) {
+                        explanation = existingMatch.get().getExplanation();
+                    } else {
+                        explanation = aiExplanationService.generateExplanation(job, candidate);
+                    }
+
+                    dto.setExplanation(explanation);
+
+                    // Persist
+                    MatchResult matchResult = existingMatch.orElse(MatchResult.builder()
+                            .jobId(jobId)
+                            .candidateId(candidate.getId())
+                            .build());
+                    matchResult.setMatchScore(dto.getMatchScore());
+                    matchResult.setExplanation(explanation);
+                    matchResultStore(matchResult);
                 }
-
-                dto.setExplanation(explanation);
-
-                // Persist
-                MatchResult matchResult = existingMatch.orElse(MatchResult.builder()
-                        .jobId(jobId)
-                        .candidateId(candidate.getId())
-                        .build());
-                matchResult.setMatchScore(dto.getMatchScore());
-                matchResult.setExplanation(explanation);
-                matchResultStore(matchResult);
             }
         }
 

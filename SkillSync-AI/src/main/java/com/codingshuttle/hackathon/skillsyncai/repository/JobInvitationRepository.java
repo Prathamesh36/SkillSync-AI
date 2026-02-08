@@ -31,4 +31,9 @@ public interface JobInvitationRepository extends JpaRepository<JobInvitation, Lo
      */
     Optional<JobInvitation> findByJobIdAndCandidateIdAndStatus(Long jobId, Long candidateId,
             JobInvitationStatus status);
+
+    /**
+     * Find all invitations for a job and list of candidates.
+     */
+    List<JobInvitation> findByJobIdAndCandidateIdIn(Long jobId, List<Long> candidateIds);
 }
