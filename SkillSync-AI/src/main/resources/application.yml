@@ -30,7 +30,7 @@ spring:
       base-url: https://openrouter.ai/api
       chat:
         options:
-          model: arcee-ai/trinity-mini:free
+          model: openrouter/free
           temperature: 0.7
     # google:
     #   genai:

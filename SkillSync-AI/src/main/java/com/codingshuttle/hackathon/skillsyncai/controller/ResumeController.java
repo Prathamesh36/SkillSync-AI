@@ -10,6 +10,8 @@ import com.codingshuttle.hackathon.skillsyncai.exception.ResourceNotFoundExcepti
 import com.codingshuttle.hackathon.skillsyncai.repository.CandidateRepository;
 import com.codingshuttle.hackathon.skillsyncai.repository.ResumeRepository;
 import com.codingshuttle.hackathon.skillsyncai.repository.UserRepository;
+import com.codingshuttle.hackathon.skillsyncai.repository.ApplicationRepository;
+import com.codingshuttle.hackathon.skillsyncai.repository.MatchResultRepository;
 import com.codingshuttle.hackathon.skillsyncai.service.AIService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +40,8 @@ public class ResumeController {
     private final ResumeRepository resumeRepository;
     private final UserRepository userRepository;
     private final CandidateRepository candidateRepository;
+    private final ApplicationRepository applicationRepository;
+    private final MatchResultRepository matchResultRepository;
 
     @PostMapping("/upload")
     public ResponseEntity<ParsedResumeDTO> uploadResume(
@@ -54,13 +58,7 @@ public class ResumeController {
             throw new BadRequestException("Only candidates can upload resumes.");
         }
 
-        // Parse resume using AI
-        log.info("Parsing resume file: {}", file.getOriginalFilename());
-        InputStreamResource resource = new InputStreamResource(file.getInputStream());
-        ParsedResumeDTO parsed = aiService.parseResume(resource);
-        log.debug("Resume parsed successfully: {}", parsed);
-
-        // Save file locally
+        // 1. Save file locally FIRST to avoid InputStream conflict
         String uploadDir = "uploads/resumes/";
         Path uploadPath = Paths.get(uploadDir);
         if (!Files.exists(uploadPath)) {
@@ -70,8 +68,18 @@ public class ResumeController {
         String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
         Path filePath = uploadPath.resolve(fileName);
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+        log.info("File saved to: {}", filePath);
 
-        // Save resume record
+        // 2. Parse resume using the SAVED file
+        // Usage of UrlResource or FileSystemResource prevents the "InputStream has
+        // already been read" error
+        // because it opens a new stream.
+        Resource localFileResource = new UrlResource(filePath.toUri());
+        log.info("Parsing resume file...");
+        ParsedResumeDTO parsed = aiService.parseResume(localFileResource);
+        log.debug("Resume parsed successfully: {}", parsed);
+
+        // 3. Save/Update resume record
         Resume resume = resumeRepository.findByUserId(userId).orElse(new Resume());
         resume.setUser(user);
         resume.setFileName(file.getOriginalFilename());
@@ -82,7 +90,7 @@ public class ResumeController {
         resumeRepository.save(resume);
         log.info("Resume saved for user: {}", userId);
 
-        // Update candidate profile with extracted data
+        // 4. Update candidate profile with extracted data
         Candidate candidate = candidateRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Candidate profile not found for user: " + userId));
 
@@ -100,13 +108,17 @@ public class ResumeController {
             log.info("Candidate profile updated with resume data for user: {}", userId);
         }
 
-        // Update user name if not set
+        // Invalidate Cache for Recommendations (so new resume gets new explanations)
+        matchResultRepository.deleteByCandidateId(candidate.getId());
+        log.info("Invalidated recommendation cache for candidate: {}", candidate.getId());
+
+        // 5. Update user name if not set
         if (parsed.fullName() != null && user.getName() == null) {
             user.setName(parsed.fullName());
             userRepository.save(user);
         }
 
-        // Generate and Store Embedding in Vector DB
+        // 6. Generate and Store Embedding
         try {
             String resumeContent = "Candidate Name: " + (parsed.fullName() != null ? parsed.fullName() : "N/A") +
                     "\nSkills: " + (parsed.skills() != null ? String.join(", ", parsed.skills()) : "N/A") +
@@ -116,15 +128,52 @@ public class ResumeController {
 
             java.util.Map<String, Object> metadata = new java.util.HashMap<>();
             metadata.put("userId", userId);
+            metadata.put("docType", "RESUME"); // Ensure docType is set for filtering!
 
             aiService.storeResumeEmbedding(resume.getId(), resumeContent, metadata);
             log.info("Resume embedding stored for resumeId: {}", resume.getId());
         } catch (Exception e) {
             log.error("Failed to store resume embedding for user: {}", userId, e);
-            // Don't fail the request, just log error
         }
 
         return ResponseEntity.ok(parsed);
+    }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteResume(org.springframework.security.core.Authentication authentication) {
+        String email = authentication.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        Long userId = user.getId();
+
+        Resume resume = resumeRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Resume not found"));
+
+        // Check for active applications
+        if (applicationRepository.existsByResumeId(resume.getId())) {
+            throw new BadRequestException(
+                    "Cannot delete resume as it is used in job applications. Please upload a new resume to replace it for future applications.");
+        }
+
+        // Delete file
+        try {
+            if (resume.getS3Url() != null) {
+                Files.deleteIfExists(Paths.get(resume.getS3Url()));
+            }
+        } catch (IOException e) {
+            log.warn("Failed to delete resume file: {}", resume.getS3Url());
+        }
+
+        // Delete record
+        resumeRepository.delete(resume);
+
+        // Note: Vector embedding deletion is not yet implemented in AIService,
+        // but since we filter by userId/resumeId/docType in search, it might be fine,
+        // or we should simply re-index on next upload.
+        // ideally: aiService.deleteEmbedding(resume.getId());
+
+        log.info("Resume deleted for user: {}", userId);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/download/{resumeId}")

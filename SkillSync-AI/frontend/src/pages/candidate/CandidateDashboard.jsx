@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { useAuth } from '../../context/AuthContext';
-import { applicationsAPI, invitationsAPI, userAPI } from '../../services/api';
+import { applicationsAPI, invitationsAPI, userAPI, jobsAPI } from '../../services/api';
 
 const CandidateDashboard = () => {
     const { user } = useAuth();
@@ -12,6 +12,7 @@ const CandidateDashboard = () => {
         { label: 'Profile', value: '0%', icon: '👤' },
     ]);
     const [invitations, setInvitations] = useState([]);
+    const [recommendations, setRecommendations] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -25,6 +26,14 @@ const CandidateDashboard = () => {
                 const invites = await invitationsAPI.getMyInvitations();
                 const inviteCount = invites.length;
                 setInvitations(invites);
+
+                // Fetch Recommendations (Top 3)
+                try {
+                    const recs = await jobsAPI.getRecommendedJobs(3, 0.5);
+                    setRecommendations(recs);
+                } catch (e) {
+                    console.warn("Could not fetch recommendations", e);
+                }
 
                 // Fetch Profile completion (simple heuristic)
                 const userData = await userAPI.getCurrentUser();
@@ -94,6 +103,49 @@ const CandidateDashboard = () => {
                     </Link>
                 </div>
             </div>
+
+            {recommendations.length > 0 && (
+                <div style={{ marginBottom: '2rem' }}>
+                    <div className="section-header">
+                        <h2 className="section-title">✨ Recommended for You</h2>
+                        <Link to="/candidate/recommendations" style={{ color: '#d97706', fontWeight: '600', fontSize: '0.9rem', textDecoration: 'none' }}>
+                            View All →
+                        </Link>
+                    </div>
+                    <div className="dashboard-grid">
+                        {recommendations.map(job => (
+                            <div key={job.jobId} style={{
+                                background: '#fff',
+                                padding: '1.5rem',
+                                borderRadius: 'var(--radius-card)',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
+                                position: 'relative',
+                                overflow: 'hidden',
+                                border: '1px solid #f3f4f6'
+                            }}>
+                                <div style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    right: 0,
+                                    background: job.matchScore >= 80 ? '#dcfce7' : '#fef3c7',
+                                    padding: '0.25rem 0.75rem',
+                                    borderRadius: '0 0 0 12px',
+                                    fontSize: '0.75rem',
+                                    fontWeight: '700',
+                                    color: job.matchScore >= 80 ? '#166534' : '#b45309'
+                                }}>
+                                    {Math.round(job.matchScore)}% Match
+                                </div>
+                                <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginTop: '0.5rem', marginBottom: '0.25rem' }}>{job.jobTitle}</h3>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>{job.companyName}</p>
+                                <Link to={`/candidate/jobs?apply=${job.jobId}`} className="btn-primary" style={{ display: 'block', textAlign: 'center', fontSize: '0.85rem' }}>
+                                    View & Apply
+                                </Link>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             <div className="section-header">
                 <h2 className="section-title">Recent Invitations</h2>

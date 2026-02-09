@@ -9,6 +9,7 @@ import CandidateInvitations from './pages/candidate/CandidateInvitations';
 import CandidateInterviews from './pages/candidate/CandidateInterviews';
 import CandidateScheduledInterviews from './pages/candidate/CandidateScheduledInterviews';
 import CandidateProfile from './pages/candidate/CandidateProfile';
+import RecommendedJobs from './pages/candidate/RecommendedJobs';
 import RecruiterDashboard from './pages/recruiter/RecruiterDashboard';
 import PostJob from './pages/recruiter/PostJob';
 import RecruiterJobsList from './pages/recruiter/RecruiterJobsList';
@@ -129,6 +130,11 @@ function AppRoutes() {
       <Route path="/candidate/profile" element={
         <ProtectedRoute>
           <CandidateProfile />
+        </ProtectedRoute>
+      } />
+      <Route path="/candidate/recommendations" element={
+        <ProtectedRoute>
+          <RecommendedJobs />
         </ProtectedRoute>
       } />
       <Route path="/recruiter/dashboard" element={

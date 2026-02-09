@@ -6,6 +6,8 @@ import com.codingshuttle.hackathon.skillsyncai.entity.Job;
 import com.codingshuttle.hackathon.skillsyncai.entity.User;
 import com.codingshuttle.hackathon.skillsyncai.exception.ResourceNotFoundException;
 import com.codingshuttle.hackathon.skillsyncai.mapper.JobMapper;
+import com.codingshuttle.hackathon.skillsyncai.enums.EmploymentType;
+import com.codingshuttle.hackathon.skillsyncai.enums.JobType;
 import com.codingshuttle.hackathon.skillsyncai.repository.UserRepository;
 import com.codingshuttle.hackathon.skillsyncai.service.JobService;
 import jakarta.validation.Valid;
@@ -17,6 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -125,6 +128,19 @@ public class JobController {
     @GetMapping("/search")
     public ResponseEntity<List<JobResponseDTO>> searchJobs(@RequestParam String query) {
         List<Job> jobs = jobService.searchJobs(query);
+        return ResponseEntity.ok(jobs.stream().map(jobMapper::toDTO).collect(Collectors.toList()));
+    }
+
+    @GetMapping("/filter")
+    public ResponseEntity<List<JobResponseDTO>> filterJobs(
+            @RequestParam(required = false) JobType jobType,
+            @RequestParam(required = false) EmploymentType employmentType,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) BigDecimal minSalary,
+            @RequestParam(required = false) BigDecimal maxSalary,
+            @RequestParam(required = false) String skill) {
+
+        List<Job> jobs = jobService.filterJobs(jobType, employmentType, location, minSalary, maxSalary, skill);
         return ResponseEntity.ok(jobs.stream().map(jobMapper::toDTO).collect(Collectors.toList()));
     }
 }

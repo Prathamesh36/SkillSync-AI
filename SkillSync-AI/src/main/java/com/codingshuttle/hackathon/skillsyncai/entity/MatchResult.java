@@ -34,7 +34,10 @@ public class MatchResult {
     private Double matchScore;
 
     @Column(columnDefinition = "TEXT")
-    private String explanation;
+    private String candidateExplanation;
+
+    @Column(columnDefinition = "TEXT")
+    private String recruiterExplanation;
 
     @CreationTimestamp
     private LocalDateTime createdAt;

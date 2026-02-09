@@ -51,8 +51,14 @@ public class JobMatchingService {
         // 2. Vector Search using Job Description
         // Combining relevant fields for better semantic search
         String query = job.getTitle() + " " + job.getDescription() + " " + String.join(" ", job.getSkillsRequired());
-        List<Document> similarDocs = vectorSearchService.findSimilarResumes(query, topK * 2); // Fetch more to allow for
-                                                                                              // filtering
+
+        List<Document> similarDocs;
+        try {
+            similarDocs = vectorSearchService.findSimilarResumes(query, topK * 2); // Fetch more to allow for filtering
+        } catch (Exception e) {
+            log.error("Vector search failed for jobId: {} (likely AI rate limit). Returning empty matches.", jobId, e);
+            return Collections.emptyList();
+        }
 
         if (similarDocs.isEmpty()) {
             return Collections.emptyList();
@@ -174,8 +180,8 @@ public class JobMatchingService {
                             candidate.getId());
 
                     String explanation;
-                    if (existingMatch.isPresent() && existingMatch.get().getExplanation() != null) {
-                        explanation = existingMatch.get().getExplanation();
+                    if (existingMatch.isPresent() && existingMatch.get().getRecruiterExplanation() != null) {
+                        explanation = existingMatch.get().getRecruiterExplanation();
                     } else {
                         explanation = aiExplanationService.generateExplanation(job, candidate);
                     }
@@ -188,7 +194,7 @@ public class JobMatchingService {
                             .candidateId(candidate.getId())
                             .build());
                     matchResult.setMatchScore(dto.getMatchScore());
-                    matchResult.setExplanation(explanation);
+                    matchResult.setRecruiterExplanation(explanation);
                     matchResultStore(matchResult);
                 }
             }

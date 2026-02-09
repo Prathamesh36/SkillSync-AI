@@ -11,6 +11,7 @@ const CandidateProfile = () => {
     const [success, setSuccess] = useState('');
     const [resumeFile, setResumeFile] = useState(null);
     const [resumeUploading, setResumeUploading] = useState(false);
+    const [resumeDeleting, setResumeDeleting] = useState(false);
     const [resumeSuccess, setResumeSuccess] = useState('');
     const [formData, setFormData] = useState({
         name: '',
@@ -308,8 +309,42 @@ const CandidateProfile = () => {
                         )}
 
                         {user?.candidateProfile?.resumeId ? (
-                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-                                ✅ Resume uploaded
+                            <div style={{ marginBottom: '1rem' }}>
+                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    ✅ Resume uploaded
+                                </div>
+                                <button
+                                    onClick={async () => {
+                                        if (!window.confirm("Are you sure you want to delete your resume? You will need to upload a new one.")) return;
+                                        setResumeDeleting(true);
+                                        try {
+                                            await userAPI.deleteResume();
+                                            const freshUser = await userAPI.getCurrentUser();
+                                            updateUser(freshUser);
+                                            setResumeSuccess('Resume deleted successfully.');
+                                            setTimeout(() => setResumeSuccess(''), 3000);
+                                        } catch (error) {
+                                            console.error("Delete failed", error);
+                                            const msg = error.response?.data?.message || "Failed to delete resume.";
+                                            alert(msg);
+                                        } finally {
+                                            setResumeDeleting(false);
+                                        }
+                                    }}
+                                    disabled={resumeDeleting}
+                                    style={{
+                                        padding: '0.4rem 0.8rem',
+                                        background: '#fee2e2',
+                                        color: '#dc2626',
+                                        border: '1px solid #fecaca',
+                                        borderRadius: 'var(--radius-sm)',
+                                        fontSize: '0.75rem',
+                                        cursor: resumeDeleting ? 'wait' : 'pointer',
+                                        fontWeight: '600'
+                                    }}
+                                >
+                                    {resumeDeleting ? 'Deleting...' : '🗑️ Delete Resume'}
+                                </button>
                             </div>
                         ) : (
                             <div style={{ fontSize: '0.85rem', color: '#f59e0b', marginBottom: '0.75rem' }}>

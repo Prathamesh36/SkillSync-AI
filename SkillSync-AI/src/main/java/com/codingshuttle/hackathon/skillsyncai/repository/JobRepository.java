@@ -7,8 +7,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
 @Repository
-public interface JobRepository extends JpaRepository<Job, Long> {
+public interface JobRepository extends JpaSpecificationExecutor<Job>, JpaRepository<Job, Long> {
     List<Job> findByPostedBy(User user);
 
     long countByPostedByAndActiveTrue(User user);

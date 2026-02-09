@@ -30,6 +30,10 @@ const Sidebar = () => {
                     <span className="nav-icon">💼</span>
                     Find Jobs
                 </NavLink>
+                <NavLink to="/candidate/recommendations" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+                    <span className="nav-icon">✨</span>
+                    Recommended for You
+                </NavLink>
                 <NavLink to="/candidate/applications" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                     <span className="nav-icon">📝</span>
                     Applications

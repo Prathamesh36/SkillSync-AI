@@ -61,6 +61,10 @@ export const userAPI = {
     return response.data;
   },
 
+  deleteResume: async () => {
+    await api.delete('/resumes/me');
+  },
+  
   downloadResume: async (resumeId) => {
     const response = await api.get(`/resumes/download/${resumeId}`, {
       responseType: 'blob',
@@ -94,6 +98,19 @@ export const jobsAPI = {
   
   searchJobs: async (query) => {
     const response = await api.get(`/jobs/search?query=${encodeURIComponent(query)}`);
+    return response.data;
+  },
+
+  filterJobs: async (filters) => {
+    const params = new URLSearchParams();
+    if (filters.jobType) params.append('jobType', filters.jobType);
+    if (filters.employmentType) params.append('employmentType', filters.employmentType);
+    if (filters.location) params.append('location', filters.location);
+    if (filters.minSalary) params.append('minSalary', filters.minSalary);
+    if (filters.maxSalary) params.append('maxSalary', filters.maxSalary);
+    if (filters.skill) params.append('skill', filters.skill);
+
+    const response = await api.get(`/jobs/filter?${params.toString()}`);
     return response.data;
   },
   
@@ -132,6 +149,18 @@ export const jobsAPI = {
 
   inviteCandidate: async (jobId, candidateId, message) => {
     const response = await api.post(`/jobs/${jobId}/invite`, { candidateId, message });
+    return response.data;
+  },
+
+  getRecommendedJobs: async (top = 5, minScore = 0.6, location = null) => {
+    let url = `/candidates/me/recommended-jobs?top=${top}&minScore=${minScore}`;
+    if (location) url += `&location=${encodeURIComponent(location)}`;
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  getJobExplanation: async (jobId) => {
+    const response = await api.get(`/candidates/me/recommended-jobs/${jobId}/explanation`);
     return response.data;
   }
 };

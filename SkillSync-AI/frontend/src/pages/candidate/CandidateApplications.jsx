@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
 import { applicationsAPI } from '../../services/api';
+import JobDetailsModal from '../../components/JobDetailsModal';
 
 const CandidateApplications = () => {
     const [applications, setApplications] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedJob, setSelectedJob] = useState(null);
 
     useEffect(() => {
         fetchApplications();
@@ -71,6 +73,7 @@ const CandidateApplications = () => {
                                 <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Company</th>
                                 <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Applied On</th>
                                 <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Status</th>
+                                <th style={{ padding: '1rem', textAlign: 'left', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -83,6 +86,15 @@ const CandidateApplications = () => {
                                     </td>
                                     <td style={{ padding: '1rem' }}>
                                         {getStatusBadge(app.status)}
+                                    </td>
+                                    <td style={{ padding: '1rem' }}>
+                                        <button
+                                            onClick={() => setSelectedJob({ jobId: app.jobId, applicationStatus: app.status })}
+                                            className="btn-secondary"
+                                            style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem' }}
+                                        >
+                                            View Job
+                                        </button>
                                     </td>
                                 </tr>
                             ))}
@@ -101,7 +113,17 @@ const CandidateApplications = () => {
                     <p style={{ color: 'var(--text-muted)' }}>Start applying to jobs to see them here.</p>
                 </div>
             )}
-        </DashboardLayout>
+
+            {
+                selectedJob && (
+                    <JobDetailsModal
+                        jobId={selectedJob.jobId}
+                        applicationStatus={selectedJob.applicationStatus}
+                        onClose={() => setSelectedJob(null)}
+                    />
+                )
+            }
+        </DashboardLayout >
     );
 };
 

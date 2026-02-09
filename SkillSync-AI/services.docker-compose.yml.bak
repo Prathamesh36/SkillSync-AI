@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.1-pg18-trixie
+    container_name: SkillSyncVectorDB
+    environment:
+      POSTGRES_DB: vectordb
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5454:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local

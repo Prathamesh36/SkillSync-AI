@@ -9,12 +9,19 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
+import java.math.BigDecimal;
+
 import java.util.stream.Collectors;
+
+import com.codingshuttle.hackathon.skillsyncai.enums.EmploymentType;
+import com.codingshuttle.hackathon.skillsyncai.enums.JobType;
+import com.codingshuttle.hackathon.skillsyncai.specification.JobSpecification;
 
 @Service
 @RequiredArgsConstructor
@@ -110,6 +117,13 @@ public class JobService {
                                 .collect(Collectors.toList());
 
                 return jobRepository.findAllById(jobIds);
+        }
+
+        public List<Job> filterJobs(JobType jobType, EmploymentType employmentType, String location,
+                        BigDecimal minSalary, BigDecimal maxSalary, String skill) {
+                Specification<Job> spec = JobSpecification.filterJobs(jobType, employmentType, location, minSalary,
+                                maxSalary, skill);
+                return jobRepository.findAll(spec);
         }
 
         private void saveJobToVectorStore(Job job) {
