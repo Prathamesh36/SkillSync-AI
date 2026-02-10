@@ -77,3 +77,6 @@ spec:
       port: 9090
       targetPort: 9090
       nodePort: 30090 # Access via http://localhost:30090
+
+
+
