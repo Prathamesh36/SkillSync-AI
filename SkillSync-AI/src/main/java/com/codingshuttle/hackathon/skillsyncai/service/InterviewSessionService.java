@@ -40,6 +40,36 @@ public class InterviewSessionService {
     // ================ PUBLIC METHODS ================
 
     /**
+     * Get history of past interview sessions for a candidate.
+     */
+    @Transactional(readOnly = true)
+    public List<InterviewHistoryDTO> getInterviewHistory(String candidateEmail) {
+        log.info("Fetching interview history for: {}", candidateEmail);
+
+        User user = userRepository.findByEmail(candidateEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Candidate candidate = candidateRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Candidate profile not found"));
+
+        List<InterviewSession> sessions = sessionRepository.findByCandidateIdAndStatus(
+                candidate.getId(), InterviewSessionStatus.COMPLETED);
+
+        return sessions.stream()
+                .sorted((a, b) -> b.getStartedAt().compareTo(a.getStartedAt())) // newest first
+                .map(session -> new InterviewHistoryDTO(
+                        session.getId(),
+                        session.getInterviewMode() != null ? session.getInterviewMode().name() : "RESUME_BASED",
+                        parseTopics(session.getTopicsJson()),
+                        session.getDifficultyLevel() != null ? session.getDifficultyLevel().name() : null,
+                        session.getFinalScore(),
+                        session.getQuestionCount(),
+                        session.getStartedAt(),
+                        session.getEndedAt()))
+                .toList();
+    }
+
+    /**
      * Start a new mock interview session.
      */
     @Transactional
@@ -74,6 +104,9 @@ public class InterviewSessionService {
         session.setStatus(InterviewSessionStatus.STARTED);
         session.setResumeSummary(resumeSummary);
         session.setQuestionCount(1);
+        session.setInterviewMode(com.codingshuttle.hackathon.skillsyncai.enums.InterviewMode.RESUME_BASED);
+        session.setTopicsJson("[]");
+        session.setDifficultyLevel(com.codingshuttle.hackathon.skillsyncai.enums.DifficultyLevel.MEDIUM);
         InterviewSession savedSession = sessionRepository.save(session);
 
         // 6. Create transcript with first question
@@ -237,7 +270,7 @@ public class InterviewSessionService {
     /**
      * End the interview and generate final feedback.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public EndInterviewResponseDTO endInterview(UUID sessionId, String candidateEmail) {
         log.info("Ending interview session: {}", sessionId);
 

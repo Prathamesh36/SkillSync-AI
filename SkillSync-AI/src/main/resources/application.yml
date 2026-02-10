@@ -16,8 +16,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: skilllsync.ai@gmail.com
-    password: bsnp gbiz nioq mzzo
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -26,12 +26,17 @@ spring:
             enable: true
   ai:
     openai:
-      api-key: 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
+      api-key: ${OPENAI_API_KEY}
       base-url: https://openrouter.ai/api
       chat:
         options:
           model: openrouter/free
           temperature: 0.7
+    ollama:
+      base-url: ${SPRING_AI_OLLAMA_BASE_URL:http://localhost:11434}
+      chat:
+        options:
+          model: gemma3:latest
     # google:
     #   genai:
     #     api-key: AIzaSyDZ0MLb0yin9wbR2b7-ZKJ348BWYaLpKL4

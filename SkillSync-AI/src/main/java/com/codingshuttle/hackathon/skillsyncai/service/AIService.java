@@ -4,9 +4,11 @@ import com.codingshuttle.hackathon.skillsyncai.dto.ParsedResumeDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.core.io.Resource;
@@ -21,14 +23,25 @@ import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.retry.annotation.Retryable;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 @EnableRetry
 public class AIService {
 
-    private final ChatClient.Builder chatClientBuilder;
+    private final ChatClient openAiChatClient;
+    private final ChatClient ollamaChatClient;
     private final EmbeddingModel embeddingModel;
     private final VectorStore vectorStore;
+
+    public AIService(ChatClient.Builder builder,
+            @Qualifier("openAiChatModel") ChatModel openAiChatModel,
+            @Qualifier("ollamaChatModel") ChatModel ollamaChatModel,
+            @Qualifier("openAiEmbeddingModel") EmbeddingModel embeddingModel,
+            VectorStore vectorStore) {
+        this.openAiChatClient = ChatClient.create(openAiChatModel);
+        this.ollamaChatClient = ChatClient.create(ollamaChatModel);
+        this.embeddingModel = embeddingModel;
+        this.vectorStore = vectorStore;
+    }
 
     /**
      * Generates embedding vector for a given text.
@@ -71,6 +84,7 @@ public class AIService {
     @Retryable(retryFor = { Exception.class }, maxAttempts = 3, backoff = @Backoff(delay = 2000, multiplier = 2))
     public ParsedResumeDTO parseResume(Resource resumeFile) {
         log.info("Starting resume parsing for file: {}", resumeFile.getFilename());
+
         // 1. Extract Text using Tika
         TikaDocumentReader reader = new TikaDocumentReader(resumeFile);
         List<Document> documents = reader.get();
@@ -80,20 +94,35 @@ public class AIService {
 
         log.debug("Extracted text content from resume (length: {})", content.length());
 
-        // 2. Query LLM for structured extraction
-        ChatClient chatClient = chatClientBuilder.build();
+        // 2. Query LLM for structured extraction with Fallback
+        log.info("Sending resume content to LLM for extraction (Primary: OpenAI)");
+        try {
+            return extractWithClient(openAiChatClient, content);
+        } catch (Exception e) {
+            log.error("OpenAI extraction failed: {}. Falling back to Ollama.", e.getMessage());
+            try {
+                return extractWithClient(ollamaChatClient, content);
+            } catch (Exception ex) {
+                log.error("Ollama fallback also failed: {}", ex.getMessage());
+                throw ex; // Rethrow if both fail
+            }
+        }
+    }
 
-        log.info("Sending resume content to LLM for extraction");
+    private ParsedResumeDTO extractWithClient(ChatClient client, String content) {
+        return client.prompt()
+                .user(u -> u.text("""
+                        Extract the following details from the resume content below:
+                        1. Full Name
+                        2. Email
+                        3. Skills (as a list)
+                        4. Years of Experience (integer estimation)
+                        5. Education (brief summary)
+                        6. Professional Summary
 
-        return chatClient.prompt()
-                .user(u -> u.text("Extract the following details from the resume content below:\n" +
-                        "1. Full Name\n" +
-                        "2. Email\n" +
-                        "3. Skills (as a list)\n" +
-                        "4. Years of Experience (integer estimation)\n" +
-                        "5. Education (brief summary)\n" +
-                        "6. Professional Summary\n\n" +
-                        "Resume Content:\n{content}")
+                        Resume Content:
+                        {content}
+                        """)
                         .param("content", content))
                 .call()
                 .entity(ParsedResumeDTO.class);

@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -108,5 +109,19 @@ public class InterviewController {
         StartInterviewResponseDTO response = interviewService.startTopicBasedInterview(
                 email, request.topics(), request.difficulty());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Get history of past completed interviews for the candidate.
+     * GET /api/interviews/mock/history
+     */
+    @GetMapping("/history")
+    @PreAuthorize("hasRole('CANDIDATE')")
+    public ResponseEntity<List<InterviewHistoryDTO>> getInterviewHistory(Authentication authentication) {
+        String email = authentication.getName();
+        log.info("Fetching interview history for: {}", email);
+
+        List<InterviewHistoryDTO> history = interviewService.getInterviewHistory(email);
+        return ResponseEntity.ok(history);
     }
 }
