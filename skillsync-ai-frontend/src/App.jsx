@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './components/Toast';
+import { Toaster } from 'react-hot-toast';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import CandidateDashboard from './pages/candidate/CandidateDashboard';
@@ -195,6 +196,47 @@ function App() {
     <Router>
       <AuthProvider>
         <ToastProvider>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 6000,
+              style: {
+                background: '#ffffff',
+                color: '#1f2937',
+                borderRadius: '16px',
+                padding: '16px 20px',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05)',
+                border: '1px solid #f3f4f6',
+                zIndex: 99999,
+                fontFamily: 'DM Sans, system-ui, -apple-system, sans-serif',
+              },
+              success: {
+                iconTheme: {
+                  primary: '#10b981',
+                  secondary: '#fff',
+                },
+                style: {
+                  background: '#ffffff',
+                  borderLeft: '4px solid #10b981',
+                },
+              },
+              error: {
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
+                },
+                style: {
+                  background: '#ffffff',
+                  borderLeft: '4px solid #ef4444',
+                },
+              },
+            }}
+            containerStyle={{
+              top: 20,
+              right: 20,
+              zIndex: 99999,
+            }}
+          />
           <AppRoutes />
         </ToastProvider>
       </AuthProvider>

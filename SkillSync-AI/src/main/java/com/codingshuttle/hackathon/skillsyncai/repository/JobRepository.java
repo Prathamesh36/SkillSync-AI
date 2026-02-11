@@ -14,4 +14,10 @@ public interface JobRepository extends JpaSpecificationExecutor<Job>, JpaReposit
     List<Job> findByPostedBy(User user);
 
     long countByPostedByAndActiveTrue(User user);
+
+    @org.springframework.data.jpa.repository.Query("SELECT j FROM Job j WHERE j.active = true AND (j.applicationDeadline IS NULL OR j.applicationDeadline >= CURRENT_DATE)")
+    List<Job> findAllPublicJobs();
+
+    @org.springframework.data.jpa.repository.Query("SELECT j FROM Job j WHERE j.active = true AND j.applicationDeadline < CURRENT_DATE")
+    List<Job> findExpiredActiveJobs();
 }

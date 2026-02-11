@@ -46,10 +46,7 @@ const Sidebar = () => {
                     <span className="nav-icon">📅</span>
                     Scheduled Interviews
                 </NavLink>
-                <NavLink to="/candidate/profile" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-                    <span className="nav-icon">👤</span>
-                    Profile
-                </NavLink>
+
                 <NavLink to="/candidate/invitations" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
                     <span className="nav-icon">📩</span>
                     Invitations
@@ -63,10 +60,13 @@ const Sidebar = () => {
                     </div>
                     <div className="user-info">
                         <span className="user-name">{user?.name || 'User'}</span>
-                        <span className="user-role">{user?.role || 'Candidate'}</span>
+                        <span className="user-role">{user?.candidateProfile?.headline || user?.role || 'Candidate'}</span>
                     </div>
                 </div>
-                <button onClick={handleLogout} className="btn-logout">
+                <NavLink to="/candidate/profile" className="btn-logout" style={{ marginTop: '0.5rem', marginBottom: '0.5rem', justifyContent: 'center', background: '#f3f4f6', color: 'var(--text-main)' }}>
+                    Edit Profile
+                </NavLink>
+                <button onClick={handleLogout} className="btn-logout" style={{ marginTop: '0.5rem' }}>
                     <span>↪</span> Sign Out
                 </button>
             </div>

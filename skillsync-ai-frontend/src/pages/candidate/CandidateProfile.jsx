@@ -38,7 +38,7 @@ const CandidateProfile = () => {
                 linkedInUrl: user.linkedInUrl || '',
                 portfolioUrl: user.portfolioUrl || '',
                 skills: user.candidateProfile?.skills ? user.candidateProfile.skills.join(', ') : '',
-                experienceYears: user.candidateProfile?.experienceYears || ''
+                experienceYears: (user.candidateProfile?.experienceYears && user.candidateProfile.experienceYears > 0) ? user.candidateProfile.experienceYears : ''
             });
         }
     }, [user]);
@@ -53,7 +53,7 @@ const CandidateProfile = () => {
             formData.skills,
             formData.experienceYears
         ];
-        const filled = fields.filter(f => f && String(f).trim().length > 0).length;
+        const filled = fields.filter(f => (f !== null && f !== undefined && String(f).trim().length > 0)).length;
         return Math.round((filled / fields.length) * 100);
     };
 
@@ -69,9 +69,6 @@ const CandidateProfile = () => {
         setSuccess('');
 
         try {
-            // Prepare payload matching UserUpdateDTO
-            // Note: skills should be list of strings logic handled in backend or need conversion here?
-            // UserUpdateDTO expects List<String> skills.
             const skillsArray = formData.skills.split(',').map(s => s.trim()).filter(Boolean);
 
             const payload = {
@@ -82,8 +79,7 @@ const CandidateProfile = () => {
                 linkedInUrl: formData.linkedInUrl,
                 portfolioUrl: formData.portfolioUrl,
                 skills: skillsArray,
-                experienceYears: formData.experienceYears ? Number(formData.experienceYears) : null,
-                // These are for recruiter, sending null/empty is fine or handle in backend
+                experienceYears: formData.experienceYears !== '' ? Number(formData.experienceYears) : null,
                 companyName: null,
                 designation: null,
                 companyWebsite: null
@@ -102,18 +98,47 @@ const CandidateProfile = () => {
         }
     };
 
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Validation
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        const allowedTypes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        ];
+        const allowedExtensions = ['pdf', 'doc', 'docx'];
+        const fileExtension = file.name.split('.').pop().toLowerCase();
+
+        if (file.size > maxSize) {
+            toast.error("File size must be less than 5MB");
+            e.target.value = null; // Reset input
+            return;
+        }
+
+        if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+            toast.error("Invalid file type. Only PDF, DOC, DOCX are allowed.");
+            e.target.value = null;
+            return;
+        }
+
+        setResumeFile(file);
+    };
+
     return (
         <DashboardLayout>
-            <div className="section-header" style={{ marginBottom: '0.5rem' }}>
+            <div className="section-header" style={{ marginBottom: '1rem' }}>
                 <div>
                     <h1 className="section-title">My Profile</h1>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Manage your professional details.</p>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Manage your professional details and resume.</p>
                 </div>
             </div>
 
-            <div className="dashboard-grid" style={{ gridTemplateColumns: 'minmax(0, 1fr) 280px', gap: '1rem', alignItems: 'start', overflow: 'hidden' }}>
+            <div className="dashboard-grid" style={{ gridTemplateColumns: 'minmax(0, 1fr) 280px', gap: '1rem', alignItems: 'start' }}>
                 {/* Main Form */}
-                <div style={{ background: 'white', padding: '1rem 1.5rem', borderRadius: 'var(--radius-card)' }}>
+                <div style={{ background: 'white', padding: '1.5rem', borderRadius: 'var(--radius-card)', maxHeight: 'calc(100vh - 180px)', overflowY: 'auto' }}>
                     {success && (
                         <div style={{
                             background: '#ecfdf5',
@@ -128,12 +153,12 @@ const CandidateProfile = () => {
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                         <h3 style={{ fontSize: '1rem', borderBottom: '1px solid #f3f4f6', paddingBottom: '0.25rem', marginBottom: '0.25rem', color: 'var(--primary-dark)' }}>Personal Information</h3>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem 1rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                             <div className="form-group">
-                                <label className="form-label" style={{ fontSize: '0.85rem' }}>Full Name</label>
+                                <label className="form-label" style={{ fontSize: '0.85rem' }}>Full Name <span style={{ color: '#dc2626' }}>*</span></label>
                                 <input
                                     type="text"
                                     name="name"
@@ -144,7 +169,7 @@ const CandidateProfile = () => {
                                 />
                             </div>
                             <div className="form-group">
-                                <label className="form-label" style={{ fontSize: '0.85rem' }}>Headline</label>
+                                <label className="form-label" style={{ fontSize: '0.85rem' }}>Headline <span style={{ color: '#dc2626' }}>*</span></label>
                                 <input
                                     type="text"
                                     name="headline"
@@ -152,12 +177,13 @@ const CandidateProfile = () => {
                                     value={formData.headline}
                                     onChange={handleChange}
                                     placeholder="e.g. Software Engineer"
+                                    required
                                 />
                             </div>
                         </div>
 
                         <div className="form-group">
-                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Bio</label>
+                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Bio <span style={{ color: '#dc2626' }}>*</span></label>
                             <textarea
                                 name="bio"
                                 className="form-input"
@@ -165,12 +191,14 @@ const CandidateProfile = () => {
                                 onChange={handleChange}
                                 rows="2"
                                 placeholder="Tell us about yourself..."
+                                style={{ padding: '0.75rem 1.125rem', minHeight: '80px' }}
+                                required
                             />
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem 1rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                             <div className="form-group">
-                                <label className="form-label" style={{ fontSize: '0.85rem' }}>Location</label>
+                                <label className="form-label" style={{ fontSize: '0.85rem' }}>Location <span style={{ color: '#dc2626' }}>*</span></label>
                                 <input
                                     type="text"
                                     name="location"
@@ -178,10 +206,11 @@ const CandidateProfile = () => {
                                     value={formData.location}
                                     onChange={handleChange}
                                     placeholder="e.g. Mumbai, India"
+                                    required
                                 />
                             </div>
                             <div className="form-group">
-                                <label className="form-label" style={{ fontSize: '0.85rem' }}>Experience (Years)</label>
+                                <label className="form-label" style={{ fontSize: '0.85rem' }}>Experience (Years) <span style={{ color: '#dc2626' }}>*</span></label>
                                 <input
                                     type="number"
                                     name="experienceYears"
@@ -190,22 +219,24 @@ const CandidateProfile = () => {
                                     onChange={handleChange}
                                     min="0"
                                     placeholder="e.g. 3"
+                                    required
                                 />
                             </div>
                         </div>
 
-                        <h3 style={{ fontSize: '1rem', borderBottom: '1px solid #f3f4f6', paddingBottom: '0.25rem', marginBottom: '0.25rem', marginTop: '0.25rem', color: 'var(--primary-dark)' }}>Professional Links & Skills</h3>
+                        <h3 style={{ fontSize: '1rem', borderBottom: '1px solid #f3f4f6', paddingBottom: '0.25rem', marginBottom: '0.25rem', marginTop: '0.5rem', color: 'var(--primary-dark)' }}>Professional Links & Skills</h3>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem 1rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                             <div className="form-group">
-                                <label className="form-label" style={{ fontSize: '0.85rem' }}>LinkedIn URL</label>
+                                <label className="form-label" style={{ fontSize: '0.85rem' }}>LinkedIn URL <span style={{ color: '#dc2626' }}>*</span></label>
                                 <input
                                     type="url"
                                     name="linkedInUrl"
                                     className="form-input"
                                     value={formData.linkedInUrl}
                                     onChange={handleChange}
-                                    placeholder="https://linkedin.com/..."
+                                    placeholder="https://linkedin.com/in/..."
+                                    required
                                 />
                             </div>
                             <div className="form-group">
@@ -222,7 +253,7 @@ const CandidateProfile = () => {
                         </div>
 
                         <div className="form-group">
-                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Skills (Comma Separated)</label>
+                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Skills (Comma Separated) <span style={{ color: '#dc2626' }}>*</span></label>
                             <input
                                 type="text"
                                 name="skills"
@@ -230,10 +261,11 @@ const CandidateProfile = () => {
                                 value={formData.skills}
                                 onChange={handleChange}
                                 placeholder="Java, React, Spring Boot..."
+                                required
                             />
                         </div>
 
-                        <button type="submit" className="btn-primary" disabled={loading} style={{ marginTop: '0.5rem', padding: '0.6rem' }}>
+                        <button type="submit" className="btn-primary" disabled={loading} style={{ marginTop: '0.5rem', padding: '0.75rem' }}>
                             {loading ? 'Saving...' : 'Save Profile'}
                         </button>
                     </form>
@@ -245,6 +277,8 @@ const CandidateProfile = () => {
                         <div style={{
                             width: '80px',
                             height: '80px',
+                            minWidth: '80px',
+                            minHeight: '80px',
                             borderRadius: '50%',
                             background: '#eff6ff',
                             color: '#3b82f6',
@@ -253,7 +287,9 @@ const CandidateProfile = () => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            margin: '0 auto 0.75rem auto'
+                            margin: '0 auto 0.75rem auto',
+                            aspectRatio: '1/1',
+                            flexShrink: 0
                         }}>
                             {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
                         </div>
@@ -284,9 +320,12 @@ const CandidateProfile = () => {
                             <div style={{ marginTop: '0.75rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                 <p style={{ marginBottom: '0.25rem' }}>Missing fields:</p>
                                 <ul style={{ paddingLeft: '1rem', marginTop: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+                                    {!formData.name && <li>Add Full Name</li>}
                                     {!formData.bio && <li>Add a Bio</li>}
                                     {!formData.headline && <li>Add a Headline</li>}
                                     {!formData.location && <li>Add Location</li>}
+                                    {(formData.experienceYears === '' || formData.experienceYears === null) && <li>Add Experience</li>}
+                                    {!formData.linkedInUrl && <li>Add LinkedIn URL</li>}
                                     {!formData.skills && <li>Add Skills</li>}
                                 </ul>
                             </div>
@@ -357,7 +396,7 @@ const CandidateProfile = () => {
                         <input
                             type="file"
                             accept=".pdf,.doc,.docx"
-                            onChange={(e) => setResumeFile(e.target.files[0])}
+                            onChange={handleFileChange}
                             style={{ display: 'none' }}
                             id="resume-upload"
                         />
@@ -389,7 +428,6 @@ const CandidateProfile = () => {
                                         await userAPI.uploadResume(formData);
                                         setResumeSuccess('Resume uploaded successfully!');
                                         setResumeFile(null);
-                                        // Refresh user data
                                         const freshUser = await userAPI.getCurrentUser();
                                         updateUser(freshUser);
                                         setTimeout(() => setResumeSuccess(''), 3000);

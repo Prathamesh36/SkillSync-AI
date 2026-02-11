@@ -75,9 +75,16 @@ public class ResumeController {
         // already been read" error
         // because it opens a new stream.
         Resource localFileResource = new UrlResource(filePath.toUri());
-        log.info("Parsing resume file...");
-        ParsedResumeDTO parsed = aiService.parseResume(localFileResource);
-        log.debug("Resume parsed successfully: {}", parsed);
+        ParsedResumeDTO parsed;
+        try {
+            log.info("Parsing resume file...");
+            parsed = aiService.parseResume(localFileResource);
+            log.debug("Resume parsed successfully: {}", parsed);
+        } catch (Exception e) {
+            log.error("Failed to parse resume with AI: {}. Proceeding with upload only.", e.getMessage());
+            // Create empty parsed resume DTO with null/empty values
+            parsed = new ParsedResumeDTO(null, null, java.util.Collections.emptyList(), null, null, null);
+        }
 
         // 3. Save/Update resume record
         Resume resume = resumeRepository.findByUserId(userId).orElse(new Resume());

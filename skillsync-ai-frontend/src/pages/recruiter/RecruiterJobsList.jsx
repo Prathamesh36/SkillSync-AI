@@ -51,7 +51,7 @@ const RecruiterJobsList = () => {
             {loading ? (
                 <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Loading jobs...</div>
             ) : jobs.length > 0 ? (
-                <div className="dashboard-grid">
+                <div className="dashboard-grid two-columns">
                     {jobs.map(job => (
                         <div key={job.id} className="stat-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             <div>
@@ -59,6 +59,24 @@ const RecruiterJobsList = () => {
                                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
                                     <span className="badge" style={{ background: '#f3f4f6', fontSize: '0.75rem' }}>📍 {job.location}</span>
                                     <span className="badge" style={{ background: '#fef3c7', color: '#b45309', fontSize: '0.75rem' }}>📝 {job.type}</span>
+                                    <span className="badge" style={{
+                                        background: (job.active && (!job.applicationDeadline || new Date(job.applicationDeadline) >= new Date().setHours(0, 0, 0, 0))) ? '#dcfce7' : '#fee2e2',
+                                        color: (job.active && (!job.applicationDeadline || new Date(job.applicationDeadline) >= new Date().setHours(0, 0, 0, 0))) ? '#166534' : '#991b1b',
+                                        fontSize: '0.75rem',
+                                        fontWeight: '500'
+                                    }}>
+                                        {(job.active && (!job.applicationDeadline || new Date(job.applicationDeadline) >= new Date().setHours(0, 0, 0, 0))) ? '✅ Open' : '❌ Closed'}
+                                    </span>
+                                    {job.applicationDeadline && (
+                                        <span className="badge" style={{
+                                            background: new Date(job.applicationDeadline) < new Date().setHours(0, 0, 0, 0) ? '#fee2e2' : '#f0f9ff',
+                                            color: new Date(job.applicationDeadline) < new Date().setHours(0, 0, 0, 0) ? '#991b1b' : '#0369a1',
+                                            fontSize: '0.75rem',
+                                            fontWeight: '500'
+                                        }}>
+                                            📅 {new Date(job.applicationDeadline) < new Date().setHours(0, 0, 0, 0) ? 'Expired' : 'Due'}: {new Date(job.applicationDeadline).toLocaleDateString()}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
 

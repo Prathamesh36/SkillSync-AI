@@ -10,6 +10,7 @@ import com.codingshuttle.hackathon.skillsyncai.enums.EmploymentType;
 import com.codingshuttle.hackathon.skillsyncai.enums.JobType;
 import com.codingshuttle.hackathon.skillsyncai.repository.UserRepository;
 import com.codingshuttle.hackathon.skillsyncai.service.JobService;
+import com.codingshuttle.hackathon.skillsyncai.scheduler.JobScheduler;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ public class JobController {
     private final UserRepository userRepository;
     private final com.codingshuttle.hackathon.skillsyncai.repository.RecruiterRepository recruiterRepository;
     private final JobMapper jobMapper;
+    private final JobScheduler jobScheduler;
 
     @PostMapping
     @PreAuthorize("hasRole('RECRUITER')")
@@ -105,12 +107,11 @@ public class JobController {
             @Valid @RequestBody JobCreateDTO dto,
             Authentication authentication) {
 
-        // Fetch existing to check ownership or existence
         Job existingJob = jobService.getJob(id);
 
-        // TODO: Ownership check can include here:
-        // if (!existingJob.getPostedBy().getEmail().equals(authentication.getName())) {
-        // throw new AccessDeniedException... }
+        if (!existingJob.getPostedBy().getEmail().equals(authentication.getName())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
 
         jobMapper.updateEntityFromDTO(dto, existingJob);
 
@@ -120,7 +121,13 @@ public class JobController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('RECRUITER')")
-    public ResponseEntity<Void> deleteJob(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteJob(@PathVariable Long id, Authentication authentication) {
+        Job existingJob = jobService.getJob(id);
+
+        if (!existingJob.getPostedBy().getEmail().equals(authentication.getName())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
         jobService.deleteJob(id);
         return ResponseEntity.noContent().build();
     }
@@ -142,5 +149,38 @@ public class JobController {
 
         List<Job> jobs = jobService.filterJobs(jobType, employmentType, location, minSalary, maxSalary, skill);
         return ResponseEntity.ok(jobs.stream().map(jobMapper::toDTO).collect(Collectors.toList()));
+    }
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasRole('RECRUITER')")
+    public ResponseEntity<JobResponseDTO> toggleJobStatus(
+            @PathVariable Long id,
+            @RequestParam boolean active,
+            Authentication authentication) {
+
+        Job job = jobService.getJob(id);
+
+        // Ownership check
+        if (!job.getPostedBy().getEmail().equals(authentication.getName())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        job.setActive(active);
+        Job updated = jobService.updateJob(id, job);
+        return ResponseEntity.ok(jobMapper.toDTO(updated));
+    }
+
+    @PostMapping("/scheduler/trigger-expiry")
+    public ResponseEntity<String> triggerJobExpiry() {
+        try {
+            System.err.println("JobController: Triggering expiry...");
+            jobScheduler.closeExpiredJobs();
+            System.err.println("JobController: Expiry triggered successfully.");
+            return ResponseEntity.ok("Success");
+        } catch (Throwable e) {
+            System.err.println("JobController: Error triggering expiry: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
+        }
     }
 }

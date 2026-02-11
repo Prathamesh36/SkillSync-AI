@@ -449,6 +449,8 @@ body {
 .user-avatar {
   width: 36px;
   height: 36px;
+  min-width: 36px;
+  min-height: 36px;
   border-radius: 50%;
   background: var(--primary);
   display: flex;
@@ -457,6 +459,8 @@ body {
   font-weight: 600;
   font-size: 0.9rem;
   color: var(--primary-text);
+  flex-shrink: 0;
+  aspect-ratio: 1 / 1;
 }
 
 .user-info {
@@ -503,6 +507,17 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2rem;
+  margin-bottom: 2rem;
+}
+
+.dashboard-grid.two-columns {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (max-width: 768px) {
+  .dashboard-grid.two-columns {
+    grid-template-columns: 1fr;
+  }
 }
 
 .stat-card {

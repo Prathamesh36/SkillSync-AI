@@ -27,8 +27,10 @@ const RecruiterJobDetails = () => {
                     salaryMin: jobData.salaryMin || '',
                     salaryMax: jobData.salaryMax || '',
                     requiredExperienceYears: jobData.requiredExperienceYears || '',
+                    requiredExperienceYears: jobData.requiredExperienceYears || '',
                     currency: jobData.currency || 'INR',
-                    skillsRequired: jobData.skillsRequired ? jobData.skillsRequired.join(', ') : ''
+                    skillsRequired: jobData.skillsRequired ? jobData.skillsRequired.join(', ') : '',
+                    applicationDeadline: jobData.applicationDeadline || ''
                 });
             } catch (error) {
                 console.error('Failed to load job:', error);
@@ -56,7 +58,9 @@ const RecruiterJobDetails = () => {
                 salaryMax: formData.salaryMax ? Number(formData.salaryMax) : null,
                 currency: formData.currency || 'INR',
                 requiredExperienceYears: formData.requiredExperienceYears ? Number(formData.requiredExperienceYears) : null,
-                skillsRequired: formData.skillsRequired ? formData.skillsRequired.split(',').map(s => s.trim()).filter(s => s) : []
+                skillsRequired: formData.skillsRequired ? formData.skillsRequired.split(',').map(s => s.trim()).filter(s => s) : [],
+                applicationDeadline: formData.applicationDeadline || null,
+                jobReferenceId: job.jobReferenceId // Include existing ID
             };
             const updatedJob = await jobsAPI.updateJob(jobId, updateData);
             setJob(updatedJob);
@@ -67,6 +71,18 @@ const RecruiterJobDetails = () => {
             toast.error('Failed to update job. Please try again.');
         } finally {
             setSaving(false);
+        }
+    };
+
+    const handleToggleStatus = async () => {
+        if (!window.confirm(`Are you sure you want to ${job.active ? 'close' : 'reopen'} this job?`)) return;
+        try {
+            const updatedJob = await jobsAPI.toggleJobStatus(jobId, !job.active);
+            setJob(updatedJob);
+            toast.success(`Job ${updatedJob.active ? 'reopened' : 'closed'} successfully!`);
+        } catch (error) {
+            console.error('Failed to update status:', error);
+            toast.error('Failed to update job status.');
         }
     };
 
@@ -91,6 +107,26 @@ const RecruiterJobDetails = () => {
         );
     }
 
+    // Format salary with proper currency symbols
+    const formatSalary = (min, max, currency) => {
+        if (!min && !max) return 'Not Disclosed';
+        const symbols = { INR: '₹', USD: '$', EUR: '€' };
+        const symbol = symbols[currency] || currency || '$';
+        if (min && max) return `${symbol}${min.toLocaleString()} - ${symbol}${max.toLocaleString()}`;
+        if (min) return `${symbol}${min.toLocaleString()}+`;
+        return `Up to ${symbol}${max.toLocaleString()}`;
+    };
+
+    const formatJobType = (type) => {
+        const types = { ONSITE: 'Onsite', REMOTE: 'Remote', HYBRID: 'Hybrid' };
+        return types[type] || type;
+    };
+
+    const formatEmploymentType = (type) => {
+        const types = { FULL_TIME: 'Full Time', PART_TIME: 'Part Time', CONTRACT: 'Contract', INTERNSHIP: 'Internship' };
+        return types[type] || type;
+    };
+
     return (
         <RecruiterDashboardLayout>
             <div className="section-header" style={{ marginBottom: '1.5rem' }}>
@@ -98,8 +134,35 @@ const RecruiterJobDetails = () => {
                     <Link to="/recruiter/jobs" style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textDecoration: 'none', marginBottom: '0.5rem', display: 'inline-block' }}>
                         ← Back to My Jobs
                     </Link>
-                    <h1 className="section-title">{editMode ? 'Edit Job' : job.title}</h1>
-                    {!editMode && <p style={{ color: 'var(--text-muted)' }}>{job.companyName}</p>}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                        <h1 className="section-title" style={{ marginBottom: 0 }}>{editMode ? 'Edit Job' : job.title}</h1>
+                        {!editMode && job.jobReferenceId && (
+                            <span style={{
+                                background: '#e0e7ff',
+                                color: '#4338ca',
+                                padding: '0.25rem 0.6rem',
+                                borderRadius: '4px',
+                                fontSize: '0.8rem',
+                                fontWeight: '600',
+                                fontFamily: 'monospace'
+                            }}>
+                                ID: {job.jobReferenceId}
+                            </span>
+                        )}
+                        {!editMode && (
+                            <span style={{
+                                background: (job.active && (!job.applicationDeadline || new Date(job.applicationDeadline) >= new Date().setHours(0, 0, 0, 0))) ? '#d1fae5' : '#fee2e2',
+                                color: (job.active && (!job.applicationDeadline || new Date(job.applicationDeadline) >= new Date().setHours(0, 0, 0, 0))) ? '#065f46' : '#991b1b',
+                                padding: '0.25rem 0.6rem',
+                                borderRadius: 'var(--radius-pill)',
+                                fontSize: '0.8rem',
+                                fontWeight: '600'
+                            }}>
+                                {(job.active && (!job.applicationDeadline || new Date(job.applicationDeadline) >= new Date().setHours(0, 0, 0, 0))) ? '✅ Open' : '⛔ Closed'}
+                            </span>
+                        )}
+                    </div>
+                    {!editMode && <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>{job.companyName}</p>}
                 </div>
                 {editMode && (
                     <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -169,7 +232,7 @@ const RecruiterJobDetails = () => {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.85rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.85rem' }}>
                                 <div className="form-group" style={{ marginBottom: 0 }}>
                                     <label className="form-label" style={{ fontSize: '0.85rem' }}>Job Type</label>
                                     <select
@@ -198,7 +261,7 @@ const RecruiterJobDetails = () => {
                                     </select>
                                 </div>
                                 <div className="form-group" style={{ marginBottom: 0 }}>
-                                    <label className="form-label" style={{ fontSize: '0.85rem' }}>Experience (Years)</label>
+                                    <label className="form-label" style={{ fontSize: '0.85rem' }}>Experience (Yrs)</label>
                                     <input
                                         type="number"
                                         name="requiredExperienceYears"
@@ -207,6 +270,17 @@ const RecruiterJobDetails = () => {
                                         onChange={handleChange}
                                         min="0"
                                         placeholder="e.g. 3"
+                                    />
+                                </div>
+                                <div className="form-group" style={{ marginBottom: 0 }}>
+                                    <label className="form-label" style={{ fontSize: '0.85rem' }}>Apply Before</label>
+                                    <input
+                                        type="date"
+                                        name="applicationDeadline"
+                                        className="form-input"
+                                        value={formData.applicationDeadline}
+                                        onChange={handleChange}
+                                        min={new Date().toISOString().split('T')[0]}
                                     />
                                 </div>
                             </div>
@@ -279,15 +353,31 @@ const RecruiterJobDetails = () => {
                         <>
                             {/* Job Info Badges */}
                             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-                                <span className="badge" style={{ background: '#f3f4f6', padding: '0.5rem 0.75rem' }}>
+                                <span className="badge" style={{ background: '#f3f4f6', color: '#374151', padding: '0.5rem 0.75rem', fontSize: '0.9rem', fontWeight: '500' }}>
                                     📍 {job.location}
                                 </span>
-                                <span className="badge" style={{ background: '#fef3c7', color: '#b45309', padding: '0.5rem 0.75rem' }}>
-                                    📋 {job.type}
+                                <span className="badge" style={{ background: '#eff6ff', color: '#1d4ed8', padding: '0.5rem 0.75rem', fontSize: '0.9rem', fontWeight: '500' }}>
+                                    🏢 {formatJobType(job.jobType)}
                                 </span>
-                                {job.salaryMin && job.salaryMax && (
-                                    <span className="badge" style={{ background: '#ecfdf5', color: '#065f46', padding: '0.5rem 0.75rem' }}>
-                                        💰 ${job.salaryMin.toLocaleString()} - ${job.salaryMax.toLocaleString()}
+                                <span className="badge" style={{ background: '#f5f3ff', color: '#7c3aed', padding: '0.5rem 0.75rem', fontSize: '0.9rem', fontWeight: '500' }}>
+                                    ⏳ {formatEmploymentType(job.employmentType)}
+                                </span>
+                                <span className="badge" style={{ background: '#ecfdf5', color: '#065f46', padding: '0.5rem 0.75rem', fontSize: '0.9rem', fontWeight: '500' }}>
+                                    💰 {formatSalary(job.salaryMin, job.salaryMax, job.currency)}
+                                </span>
+                                {job.requiredExperienceYears !== null && job.requiredExperienceYears !== undefined && (
+                                    <span className="badge" style={{ background: '#fffbeb', color: '#b45309', padding: '0.5rem 0.75rem', fontSize: '0.9rem', fontWeight: '500' }}>
+                                        🎓 {job.requiredExperienceYears}+ Years Exp.
+                                    </span>
+                                )}
+                                {job.applicationDeadline && (
+                                    <span className="badge" style={{
+                                        background: new Date(job.applicationDeadline) < new Date() ? '#fee2e2' : '#f0f9ff',
+                                        color: new Date(job.applicationDeadline) < new Date() ? '#991b1b' : '#0369a1',
+                                        padding: '0.5rem 0.75rem', fontSize: '0.9rem', fontWeight: '500'
+                                    }}>
+                                        📅 Apply by: {new Date(job.applicationDeadline).toLocaleDateString()}
+                                        {new Date(job.applicationDeadline) < new Date() && ' (Expired)'}
                                     </span>
                                 )}
                             </div>
@@ -311,18 +401,33 @@ const RecruiterJobDetails = () => {
                             )}
 
                             {/* Required Skills */}
-                            {job.requiredSkills && job.requiredSkills.length > 0 && (
-                                <div>
+                            {job.skillsRequired && job.skillsRequired.length > 0 && (
+                                <div style={{ marginBottom: '2rem' }}>
                                     <h3 style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '0.75rem' }}>Required Skills</h3>
                                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                        {job.requiredSkills.map((skill, index) => (
-                                            <span key={index} className="badge" style={{ background: '#eff6ff', color: '#1d4ed8', padding: '0.4rem 0.75rem' }}>
+                                        {job.skillsRequired.map((skill, index) => (
+                                            <span key={index} className="badge" style={{ background: '#eff6ff', color: '#1d4ed8', padding: '0.5rem 0.85rem', fontSize: '0.9rem', fontWeight: '500' }}>
                                                 {skill}
                                             </span>
                                         ))}
                                     </div>
                                 </div>
                             )}
+
+                            {/* Posted Date */}
+                            <div style={{
+                                paddingTop: '1.5rem',
+                                borderTop: '1px solid #f3f4f6',
+                                fontSize: '0.9rem',
+                                color: 'var(--text-muted)',
+                                fontStyle: 'italic'
+                            }}>
+                                Posted on {new Date(job.createdAt).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                })}
+                            </div>
                         </>
                     )}
                 </div>
@@ -330,21 +435,6 @@ const RecruiterJobDetails = () => {
                 {/* Sidebar - Only show in view mode */}
                 {!editMode && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        {/* Quick Stats */}
-                        <div style={{ background: 'white', padding: '1.25rem', borderRadius: 'var(--radius-card)' }}>
-                            <h3 style={{ fontSize: '0.9rem', marginBottom: '0.75rem' }}>📊 Quick Stats</h3>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Experience Required</span>
-                                    <span style={{ fontWeight: '500' }}>{job.experienceMin || 0}+ years</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span style={{ color: 'var(--text-muted)' }}>Posted</span>
-                                    <span style={{ fontWeight: '500' }}>{new Date(job.createdAt).toLocaleDateString()}</span>
-                                </div>
-                            </div>
-                        </div>
-
                         {/* Actions */}
                         <div style={{ background: 'white', padding: '1.25rem', borderRadius: 'var(--radius-card)' }}>
                             <h3 style={{ fontSize: '0.9rem', marginBottom: '0.75rem' }}>⚡ Actions</h3>
@@ -365,6 +455,23 @@ const RecruiterJobDetails = () => {
                                     }}
                                 >
                                     ✏️ Edit Job
+                                </button>
+                                <button
+                                    onClick={handleToggleStatus}
+                                    style={{
+                                        display: 'block',
+                                        padding: '0.6rem',
+                                        background: job.active ? '#fee2e2' : '#d1fae5',
+                                        color: job.active ? '#991b1b' : '#065f46',
+                                        textAlign: 'center',
+                                        borderRadius: 'var(--radius-pill)',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        fontSize: '0.85rem',
+                                        fontWeight: '600'
+                                    }}
+                                >
+                                    {job.active ? '⛔ Close Job' : '✅ Reopen Job'}
                                 </button>
                                 <Link
                                     to={`/recruiter/jobs/${jobId}/applications`}

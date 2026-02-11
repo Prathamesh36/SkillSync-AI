@@ -60,6 +60,7 @@ public class VectorSearchService {
         SearchRequest searchRequest = SearchRequest.builder()
                 .query(query)
                 .topK(topK)
+                .similarityThreshold(0.3)
                 .filterExpression(b.eq("docType", "JOB").build())
                 .build();
 

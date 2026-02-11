@@ -56,6 +56,11 @@ public class Job {
 
     private boolean active = true;
 
+    private java.time.LocalDate applicationDeadline;
+
+    @Column(unique = true)
+    private String jobReferenceId;
+
     @CreationTimestamp
     private LocalDateTime createdAt;
 

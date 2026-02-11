@@ -37,9 +37,10 @@ public class CandidateJobRecommendationService {
     private final MatchResultRepository matchResultRepository;
     private final ChatClient.Builder chatClientBuilder;
 
-    private static final double WEIGHT_SEMANTIC = 0.6;
-    private static final double WEIGHT_SKILLS = 0.3;
+    private static final double WEIGHT_SEMANTIC = 0.4;
+    private static final double WEIGHT_SKILLS = 0.5;
     private static final double WEIGHT_EXPERIENCE = 0.1;
+    private static final double MIN_SKILL_OVERLAP = 0.2;
 
     /**
      * Get recommended jobs for the current candidate.
@@ -55,16 +56,38 @@ public class CandidateJobRecommendationService {
         Resume resume = resumeRepository.findFirstByUserIdOrderByIdDesc(user.getId())
                 .orElse(null);
 
-        String queryText;
+        // Build a rich query from BOTH resume AND profile data
+        StringBuilder queryBuilder = new StringBuilder();
+
+        // Add resume content if available
         if (resume != null && resume.getParsedContent() != null && !resume.getParsedContent().isEmpty()) {
-            queryText = resume.getParsedContent();
-        } else if (candidate.getSkills() != null && !candidate.getSkills().isEmpty()) {
-            queryText = String.join(", ", candidate.getSkills()) + " "
-                    + (candidate.getHeadline() != null ? candidate.getHeadline() : "");
-        } else {
-            log.warn("No resume or skills found for candidate {}", user.getEmail());
+            queryBuilder.append(resume.getParsedContent()).append(" ");
+        }
+
+        // Always enrich with candidate profile data
+        if (candidate.getHeadline() != null && !candidate.getHeadline().isEmpty()) {
+            queryBuilder.append("Role: ").append(candidate.getHeadline()).append(". ");
+        }
+        if (candidate.getSkills() != null && !candidate.getSkills().isEmpty()) {
+            queryBuilder.append("Skills: ").append(String.join(", ", candidate.getSkills())).append(". ");
+        }
+        if (user.getBio() != null && !user.getBio().isEmpty()) {
+            queryBuilder.append("Background: ").append(user.getBio()).append(". ");
+        }
+        if (candidate.getExperienceYears() != null) {
+            queryBuilder.append("Experience: ").append(candidate.getExperienceYears()).append(" years. ");
+        }
+        if (candidate.getLocation() != null && !candidate.getLocation().isEmpty()) {
+            queryBuilder.append("Location: ").append(candidate.getLocation()).append(". ");
+        }
+
+        String queryText = queryBuilder.toString().trim();
+        if (queryText.isEmpty()) {
+            log.warn("No resume or profile data found for candidate {}", user.getEmail());
             return Collections.emptyList();
         }
+        log.info("Query text for recommendations (first 200 chars): {}",
+                queryText.substring(0, Math.min(200, queryText.length())));
 
         // 2. Vector Search (fetch more to allow filtering)
         if (queryText == null || queryText.trim().isEmpty()) {
@@ -88,39 +111,33 @@ public class CandidateJobRecommendationService {
             return Collections.emptyList();
         }
 
-        // Map JobId -> Semantic Score
-        Map<Long, Double> semanticScores = similarDocs.stream()
-                .collect(Collectors.toMap(
-                        doc -> Long.valueOf(doc.getMetadata().get("jobId").toString()),
-                        doc -> {
-                            // Normalize score? Spring AI usually returns distance or similarity.
-                            // Assuming similarity 0-1. If it's distance, we might need conversion.
-                            // Default implementation usually returns similarity (higher is better).
-                            // Let's assume input is 0-1.
-                            return 1.0; // Placeholder if actual score not exposed in Document metadata easily
-                            // Wait, currently vectorSearchService implementation doesn't return score in
-                            // metadata by default?
-                            // Spring AI Document doesn't hold the score itself unless the VectorStore puts
-                            // it there.
-                            // Some implementations return ScoredDocument (not Document).
-                            // But method returns List<Document>.
-                            // Most implementations put 'distance' in metadata.
-                            // Let's check metadata for 'distance' or assume standard ranking order implies
-                            // score.
-                            // For MVP, we'll use linear decay based on rank if score missing?
-                            // Or better: Assume 1.0 for top match, decaying slightly?
-                            // Actually, let's look at `VectorSearchService.findSimilarResumes` logic - it
-                            // doesn't extract score.
-                            // I'll proceed without explicit score from search result for now (defaulting to
-                            // 0.8), or try to extract if present.
-                        },
-                        (v1, v2) -> v1 // Merge function
-                ));
+        // Map JobId -> Semantic Score (extract real scores from Document metadata)
+        Map<Long, Double> semanticScores = new LinkedHashMap<>();
+        int rank = 0;
+        for (Document doc : similarDocs) {
+            Long jobId = Long.valueOf(doc.getMetadata().get("jobId").toString());
+            if (semanticScores.containsKey(jobId))
+                continue; // Skip duplicates
 
-        // Improve score extraction: Spring AI's VectorStore.similaritySearch returns
-        // Documents.
-        // Often 'score' or 'distance' is in metadata.
-        // Let's iterate and check.
+            double score = 0.7; // Default fallback
+            // Try to extract real similarity score
+            if (doc.getScore() != null) {
+                score = doc.getScore();
+            } else if (doc.getMetadata().containsKey("score")) {
+                Object s = doc.getMetadata().get("score");
+                if (s instanceof Number)
+                    score = ((Number) s).doubleValue();
+            } else if (doc.getMetadata().containsKey("distance")) {
+                Object dist = doc.getMetadata().get("distance");
+                if (dist instanceof Number)
+                    score = 1.0 - ((Number) dist).doubleValue();
+            } else {
+                // Linear decay based on rank position
+                score = Math.max(0.3, 1.0 - (rank * 0.05));
+            }
+            semanticScores.put(jobId, score);
+            rank++;
+        }
 
         // 3. Fetch Job Entities
         List<Job> candidateJobs = jobRepository.findAllById(semanticScores.keySet());
@@ -173,45 +190,34 @@ public class CandidateJobRecommendationService {
 
             // --- HYBRID SCORING ---
 
-            // 1. Semantic Score (Simulating decay based on rank if real score unavailable)
-            // Ideally we'd get this from the vector store. For now, estimate based on list
-            // position vs total.
-            // Or assume doc has "distance" in metadata.
-            Double vectorScore = 0.85; // Default high baseline for similar docs
-            if (doc.getMetadata().containsKey("distance")) {
-                // distance usually 0 (close) to 1 (far). Sim = 1 - distance
-                Object dist = doc.getMetadata().get("distance");
-                if (dist instanceof Number) {
-                    vectorScore = 1.0 - ((Number) dist).doubleValue();
-                }
+            // 1. Skill Overlap (hard filter: skip if below minimum)
+            double skillScore = calculateSkillOverlap(job.getSkillsRequired(), candidateSkills);
+            if (skillScore < MIN_SKILL_OVERLAP) {
+                log.debug("Skipping job {} (skill overlap {}% < {}%)", jobId, String.format("%.1f", skillScore * 100),
+                        String.format("%.1f", MIN_SKILL_OVERLAP * 100));
+                continue;
             }
 
-            // 2. Skill Overlap
-            double skillScore = calculateSkillOverlap(job.getSkillsRequired(), candidateSkills);
+            // 2. Semantic Score (from pre-computed map)
+            Double vectorScore = semanticScores.getOrDefault(jobId, 0.5);
 
             // 3. Experience Fit
-            double expScore = 1.0; // Since we hard filtered, they match.
-            // Bonus for extra experience?
+            double expScore = 1.0;
             if (candidate.getExperienceYears() != null && job.getRequiredExperienceYears() != null) {
                 int diff = candidate.getExperienceYears() - job.getRequiredExperienceYears();
                 if (diff > 2)
-                    expScore = 1.2; // Bonus
+                    expScore = 1.2;
             }
 
             double finalScore = (vectorScore * WEIGHT_SEMANTIC) +
                     (skillScore * WEIGHT_SKILLS) +
                     (expScore * WEIGHT_EXPERIENCE);
 
-            // Normalize final score to 0.0 - 1.0 range (roughly)
             finalScore = Math.min(1.0, finalScore);
-            // Or 0-100? User used 0-10 matchScore in other places, but prompt example said
-            // "0.6".
-            // Let's keep 0.0-1.0 format or 0-100. Let's use % (0-100) for display
-            // consistency.
             double matchPercentage = finalScore * 100;
 
-            if (matchPercentage < (minScore != null ? minScore * 100 : 60.0)) {
-                continue; // Min score filter
+            if (matchPercentage < (minScore != null ? minScore * 100 : 70.0)) {
+                continue;
             }
 
             // AI Explanation (Lazy generation later)

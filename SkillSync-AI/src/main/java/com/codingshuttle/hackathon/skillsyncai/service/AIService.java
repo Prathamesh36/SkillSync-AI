@@ -80,8 +80,9 @@ public class AIService {
 
     /**
      * Parses a resume file (PDF/Doc) and extracts structured data.
+     * Note: Retry removed because controller handles failures gracefully with empty
+     * defaults.
      */
-    @Retryable(retryFor = { Exception.class }, maxAttempts = 3, backoff = @Backoff(delay = 2000, multiplier = 2))
     public ParsedResumeDTO parseResume(Resource resumeFile) {
         log.info("Starting resume parsing for file: {}", resumeFile.getFilename());
 
@@ -94,17 +95,20 @@ public class AIService {
 
         log.debug("Extracted text content from resume (length: {})", content.length());
 
-        // 2. Query LLM for structured extraction with Fallback
+        // 2. Query LLM for structured extraction with Ollama fallback (with timeout
+        // protection)
         log.info("Sending resume content to LLM for extraction (Primary: OpenAI)");
         try {
             return extractWithClient(openAiChatClient, content);
         } catch (Exception e) {
             log.error("OpenAI extraction failed: {}. Falling back to Ollama.", e.getMessage());
             try {
+                // Try Ollama fallback with timeout protection
+                log.info("Attempting Ollama fallback...");
                 return extractWithClient(ollamaChatClient, content);
             } catch (Exception ex) {
                 log.error("Ollama fallback also failed: {}", ex.getMessage());
-                throw ex; // Rethrow if both fail
+                throw ex; // Rethrow - let ResumeController handle with empty defaults
             }
         }
     }

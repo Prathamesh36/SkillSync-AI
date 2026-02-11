@@ -28,7 +28,7 @@ public class CandidateJobRecommendationController {
         public ResponseEntity<List<RecommendedJobResponse>> getRecommendedJobs(
                         Authentication authentication,
                         @RequestParam(defaultValue = "5") int top,
-                        @RequestParam(defaultValue = "0.6") Double minScore,
+                        @RequestParam(defaultValue = "0.7") Double minScore,
                         @RequestParam(required = false) String location) {
 
                 String email = authentication.getName();

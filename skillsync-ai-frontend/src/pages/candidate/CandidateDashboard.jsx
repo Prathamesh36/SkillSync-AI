@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
 import { useAuth } from '../../context/AuthContext';
 import { applicationsAPI, invitationsAPI, userAPI, jobsAPI } from '../../services/api';
+import toast from 'react-hot-toast';
 
 const CandidateDashboard = () => {
     const { user } = useAuth();
+    const navigate = useNavigate();
     const [stats, setStats] = useState([
         { label: 'Applications', value: '0', icon: '📝' },
         { label: 'Invites', value: '0', icon: '📩' },
@@ -57,6 +59,75 @@ const CandidateDashboard = () => {
 
         fetchData();
     }, []);
+
+    // Profile Completion Check
+    useEffect(() => {
+        // Only check once per session
+        const hasShownToast = sessionStorage.getItem('candidateProfileToastShown');
+        if (hasShownToast || !user) return;
+
+        const calculateCompletion = () => {
+            const fields = [
+                user.name,
+                user.bio,
+                user.linkedInUrl,
+                user.candidateProfile?.resumeId,
+                user.candidateProfile?.skills?.length > 0,
+                user.candidateProfile?.experienceYears
+            ];
+            const filled = fields.filter(f => f && (typeof f === 'boolean' ? f : String(f).trim().length > 0)).length;
+            return Math.round((filled / fields.length) * 100);
+        };
+
+        const completion = calculateCompletion();
+
+        if (completion < 100) {
+            toast(
+                (t) => (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <div>
+                            <div style={{ fontWeight: '600', marginBottom: '0.25rem', color: '#1f2937' }}>
+                                Your profile is {completion}% complete
+                            </div>
+                            <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+                                Complete your profile to unlock all features!
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => {
+                                toast.dismiss(t.id);
+                                navigate('/candidate/profile');
+                            }}
+                            style={{
+                                background: '#f5c842',
+                                color: '#1a1a1a',
+                                border: 'none',
+                                borderRadius: '20px',
+                                padding: '0.6rem 1.2rem',
+                                fontSize: '0.85rem',
+                                fontWeight: '600',
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap',
+                                transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={(e) => e.target.style.background = '#e6b835'}
+                            onMouseLeave={(e) => e.target.style.background = '#f5c842'}
+                        >
+                            Complete Profile
+                        </button>
+                    </div>
+                ),
+                {
+                    duration: 6000,
+                    icon: '📝',
+                    style: {
+                        maxWidth: '500px',
+                    }
+                }
+            );
+            sessionStorage.setItem('candidateProfileToastShown', 'true');
+        }
+    }, [user, navigate]);
 
     return (
         <DashboardLayout>

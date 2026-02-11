@@ -33,6 +33,11 @@ public class JobService {
 
         @Transactional
         public Job createJob(Job job) {
+                // Ensure Job Reference ID is provided (though DTO validation should catch this)
+                if (job.getJobReferenceId() == null || job.getJobReferenceId().trim().isEmpty()) {
+                        throw new IllegalArgumentException("Job Reference ID is required");
+                }
+
                 // 1. Save to DB
                 Job savedJob = jobRepository.save(job);
 
@@ -48,7 +53,7 @@ public class JobService {
         }
 
         public List<Job> getAllJobs() {
-                return jobRepository.findAll();
+                return jobRepository.findAllPublicJobs();
         }
 
         public List<Job> getJobsByRecruiter(com.codingshuttle.hackathon.skillsyncai.entity.User recruiter) {

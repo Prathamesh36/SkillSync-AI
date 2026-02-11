@@ -2,9 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import RecruiterDashboardLayout from '../../components/RecruiterDashboardLayout';
 import { jobsAPI, authAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
+import toast from 'react-hot-toast';
 
 const PostJob = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         title: '',
@@ -16,10 +19,35 @@ const PostJob = () => {
         jobType: 'ONSITE',
         employmentType: 'FULL_TIME',
         requiredExperienceYears: '',
-        skillsRequired: '' // Comma separated string
+        skillsRequired: '', // Comma separated string
+        skillsRequired: '', // Comma separated string
+        applicationDeadline: '',
+        jobReferenceId: ''
     });
 
     const [errorModal, setErrorModal] = useState({ show: false, message: '', actionLink: null, actionText: '' });
+    const [profileComplete, setProfileComplete] = useState(true); // Default true to avoid flash
+
+    // Check profile completion on mount
+    useEffect(() => {
+        if (!user) return;
+
+        const calculateCompletion = () => {
+            const fields = [
+                user.name,
+                user.bio,
+                user.linkedInUrl,
+                user.recruiterProfile?.companyName,
+                user.recruiterProfile?.designation,
+                user.recruiterProfile?.companyWebsite
+            ];
+            const filled = fields.filter(f => f && String(f).trim().length > 0).length;
+            return Math.round((filled / fields.length) * 100);
+        };
+
+        const completion = calculateCompletion();
+        setProfileComplete(completion === 100);
+    }, [user]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -43,7 +71,10 @@ const PostJob = () => {
                 jobType: formData.jobType,
                 employmentType: formData.employmentType,
                 requiredExperienceYears: formData.requiredExperienceYears ? Number(formData.requiredExperienceYears) : null,
-                skillsRequired: skillsArray
+                skillsRequired: skillsArray,
+                skillsRequired: skillsArray,
+                applicationDeadline: formData.applicationDeadline || null,
+                jobReferenceId: formData.jobReferenceId || null
             };
 
             await jobsAPI.createJob(payload);
@@ -82,7 +113,45 @@ const PostJob = () => {
                 </div>
             </div>
 
-            <div style={{ background: 'white', padding: '1.5rem', borderRadius: 'var(--radius-card)', maxWidth: '100%', maxHeight: 'calc(100vh - 140px)', overflowY: 'auto' }}>
+            {!profileComplete && (
+                <div style={{
+                    background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
+                    borderRadius: 'var(--radius-card)',
+                    padding: '1.5rem 2rem',
+                    marginBottom: '1.5rem',
+                    border: '2px solid #fca5a5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1.5rem'
+                }}>
+                    <div style={{ fontSize: '2.5rem' }}>🚫</div>
+                    <div style={{ flex: 1 }}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: '#991b1b', marginBottom: '0.5rem' }}>
+                            Profile Incomplete - Form Disabled
+                        </h3>
+                        <p style={{ fontSize: '0.9rem', color: '#dc2626', lineHeight: '1.5', marginBottom: '0.75rem' }}>
+                            You must complete your recruiter profile before posting jobs. All form fields below are disabled.
+                        </p>
+                        <a
+                            href="/recruiter/profile"
+                            style={{
+                                display: 'inline-block',
+                                background: '#ef4444',
+                                color: 'white',
+                                padding: '0.6rem 1.2rem',
+                                borderRadius: '8px',
+                                textDecoration: 'none',
+                                fontWeight: '600',
+                                fontSize: '0.9rem'
+                            }}
+                        >
+                            Complete Profile Now →
+                        </a>
+                    </div>
+                </div>
+            )}
+
+            <div style={{ background: 'white', padding: '1.5rem', borderRadius: 'var(--radius-card)', maxWidth: '100%', maxHeight: 'calc(100vh - 140px)', overflowY: 'auto', opacity: profileComplete ? 1 : 0.5, pointerEvents: profileComplete ? 'auto' : 'none' }}>
                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '0.85rem' }}>
@@ -112,7 +181,7 @@ const PostJob = () => {
                         </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.85rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0.85rem' }}>
                         <div className="form-group" style={{ marginBottom: 0 }}>
                             <label className="form-label" style={{ fontSize: '0.85rem' }}>Job Type</label>
                             <select
@@ -141,7 +210,7 @@ const PostJob = () => {
                             </select>
                         </div>
                         <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Experience (Years)</label>
+                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Experience (Yrs)</label>
                             <input
                                 type="number"
                                 name="requiredExperienceYears"
@@ -152,9 +221,22 @@ const PostJob = () => {
                                 placeholder="e.g. 3"
                             />
                         </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Apply Before</label>
+                            <input
+                                type="date"
+                                name="applicationDeadline"
+                                className="form-input"
+                                value={formData.applicationDeadline}
+                                onChange={handleChange}
+                                min={new Date().toISOString().split('T')[0]}
+                            />
+                        </div>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 0.8fr', gap: '0.85rem' }}>
+
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 0.8fr 1fr', gap: '0.85rem' }}>
                         <div className="form-group" style={{ marginBottom: 0 }}>
                             <label className="form-label" style={{ fontSize: '0.85rem' }}>Min Salary</label>
                             <input
@@ -189,6 +271,20 @@ const PostJob = () => {
                                 <option value="USD">USD ($)</option>
                                 <option value="EUR">EUR (€)</option>
                             </select>
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Job Referral ID <span style={{ color: 'red' }}>*</span></label>
+                            <input
+                                type="text"
+                                name="jobReferenceId"
+                                className="form-input"
+                                value={formData.jobReferenceId}
+                                onChange={handleChange}
+                                placeholder="e.g. 1234567"
+                                required
+                                pattern="\d+"
+                                title="Job Referral ID must be a numeric value"
+                            />
                         </div>
                     </div>
 
@@ -232,69 +328,71 @@ const PostJob = () => {
                         </button>
                     </div>
                 </form>
-            </div>
+            </div >
 
             {/* Custom Error Modal */}
-            {errorModal.show && (
-                <div style={{
-                    position: 'fixed',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 1000,
-                    backdropFilter: 'blur(2px)'
-                }}>
+            {
+                errorModal.show && (
                     <div style={{
-                        backgroundColor: 'white',
-                        padding: '2rem',
-                        borderRadius: 'var(--radius-card)',
-                        maxWidth: '450px',
-                        width: '90%',
-                        textAlign: 'center',
-                        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                        animation: 'fadeIn 0.2s ease-out'
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1000,
+                        backdropFilter: 'blur(2px)'
                     }}>
-                        <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
-                        <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#1f2937' }}>Action Required</h3>
-                        <p style={{ color: '#4b5563', marginBottom: '1.5rem', lineHeight: '1.5' }}>{errorModal.message}</p>
+                        <div style={{
+                            backgroundColor: 'white',
+                            padding: '2rem',
+                            borderRadius: 'var(--radius-card)',
+                            maxWidth: '450px',
+                            width: '90%',
+                            textAlign: 'center',
+                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                            animation: 'fadeIn 0.2s ease-out'
+                        }}>
+                            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#1f2937' }}>Action Required</h3>
+                            <p style={{ color: '#4b5563', marginBottom: '1.5rem', lineHeight: '1.5' }}>{errorModal.message}</p>
 
-                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                            {errorModal.actionLink ? (
-                                <>
+                            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                                {errorModal.actionLink ? (
+                                    <>
+                                        <button
+                                            onClick={() => setErrorModal({ ...errorModal, show: false })}
+                                            className="btn-secondary"
+                                            style={{ flex: 1 }}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={() => navigate(errorModal.actionLink)}
+                                            className="btn-primary"
+                                            style={{ flex: 1 }}
+                                        >
+                                            {errorModal.actionText}
+                                        </button>
+                                    </>
+                                ) : (
                                     <button
                                         onClick={() => setErrorModal({ ...errorModal, show: false })}
-                                        className="btn-secondary"
-                                        style={{ flex: 1 }}
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        onClick={() => navigate(errorModal.actionLink)}
                                         className="btn-primary"
-                                        style={{ flex: 1 }}
+                                        style={{ width: '100%' }}
                                     >
-                                        {errorModal.actionText}
+                                        Close
                                     </button>
-                                </>
-                            ) : (
-                                <button
-                                    onClick={() => setErrorModal({ ...errorModal, show: false })}
-                                    className="btn-primary"
-                                    style={{ width: '100%' }}
-                                >
-                                    Close
-                                </button>
-                            )}
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </RecruiterDashboardLayout>
+                )
+            }
+        </RecruiterDashboardLayout >
     );
 };
 

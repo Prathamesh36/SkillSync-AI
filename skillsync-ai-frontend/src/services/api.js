@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:30090/api';
+const API_BASE_URL = 'http://localhost:9090/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -127,6 +127,11 @@ export const jobsAPI = {
 
   updateJob: async (id, jobData) => {
     const response = await api.put(`/jobs/${id}`, jobData);
+    return response.data;
+  },
+
+  toggleJobStatus: async (id, active) => {
+    const response = await api.patch(`/jobs/${id}/status`, null, { params: { active } });
     return response.data;
   },
 

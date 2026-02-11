@@ -108,7 +108,41 @@ const JobDetailsModal = ({ jobId, onClose, applicationStatus, aiExplanation }) =
                 ) : job ? (
                     <div>
                         <div style={{ marginBottom: '2rem' }}>
-                            <h2 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--text-main)', marginBottom: '0.5rem', lineHeight: '1.2' }}>{job.title}</h2>
+                            <h2 style={{ fontSize: '1.75rem', fontWeight: '700', color: 'var(--text-main)', marginBottom: '0.5rem', lineHeight: '1.2' }}>
+                                {job.title}
+                                {job.jobReferenceId && (
+                                    <span style={{
+                                        display: 'inline-block',
+                                        fontSize: '0.5em',
+                                        color: '#6b7280',
+                                        fontWeight: 'normal',
+                                        background: '#f3f4f6',
+                                        padding: '0.2rem 0.5rem',
+                                        borderRadius: '4px',
+                                        marginLeft: '0.75rem',
+                                        verticalAlign: 'middle',
+                                        fontFamily: 'monospace'
+                                    }}>
+                                        #{job.jobReferenceId}
+                                    </span>
+                                )}
+                                {(!job.active || (job.applicationDeadline && new Date(job.applicationDeadline) < new Date())) && (
+                                    <span style={{
+                                        display: 'inline-block',
+                                        fontSize: '0.5em',
+                                        color: '#991b1b',
+                                        fontWeight: '600',
+                                        background: '#fee2e2',
+                                        padding: '0.2rem 0.6rem',
+                                        borderRadius: '4px',
+                                        marginLeft: '0.75rem',
+                                        verticalAlign: 'middle',
+                                        textTransform: 'uppercase'
+                                    }}>
+                                        {!job.active ? 'Closed' : 'Expired'}
+                                    </span>
+                                )}
+                            </h2>
                             <p style={{ color: 'var(--text-muted)', fontSize: '1rem' }}>
                                 <span style={{ fontWeight: '500', color: 'var(--text-main)' }}>{job.companyName}</span> • {job.location}
                             </p>
@@ -198,7 +232,15 @@ const JobDetailsModal = ({ jobId, onClose, applicationStatus, aiExplanation }) =
                                 Close
                             </button>
 
-                            {applicationStatus === 'APPLY_NOW' ? (
+                            {(!job.active || (job.applicationDeadline && new Date(job.applicationDeadline) < new Date())) ? (
+                                <button
+                                    disabled
+                                    className="btn-secondary"
+                                    style={{ opacity: 0.6, cursor: 'not-allowed', background: '#fee2e2', color: '#991b1b', borderColor: '#fca5a5' }}
+                                >
+                                    {job.active ? 'Application Closed' : 'Job Closed'}
+                                </button>
+                            ) : applicationStatus === 'APPLY_NOW' ? (
                                 <Link
                                     to={`/candidate/jobs?apply=${jobId}`}
                                     className="btn-primary"

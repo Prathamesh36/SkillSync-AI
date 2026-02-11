@@ -20,5 +20,7 @@ public record JobCreateDTO(
         @NotNull JobType jobType,
         @NotNull EmploymentType employmentType,
         Integer requiredExperienceYears,
-        List<String> skillsRequired) {
+        List<String> skillsRequired,
+        java.time.LocalDate applicationDeadline,
+        @NotNull(message = "Job Reference ID is required") @jakarta.validation.constraints.Pattern(regexp = "\\d+", message = "Job Reference ID must be numeric") String jobReferenceId) {
 }
