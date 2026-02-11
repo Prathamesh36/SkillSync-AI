@@ -37,12 +37,20 @@ const CandidateDashboard = () => {
                     console.warn("Could not fetch recommendations", e);
                 }
 
-                // Fetch Profile completion (simple heuristic)
+                // Fetch Profile completion (accurate calculation)
                 const userData = await userAPI.getCurrentUser();
-                let completion = 20; // Base
-                if (userData.candidateProfile?.resumeId) completion += 40;
-                if (userData.candidateProfile?.skills?.length > 0) completion += 20;
-                if (userData.candidateProfile?.experienceYears) completion += 20;
+                const fields = [
+                    userData.name,
+                    userData.bio,
+                    userData.candidateProfile?.headline,
+                    userData.candidateProfile?.location,
+                    userData.linkedInUrl,
+                    userData.candidateProfile?.skills?.length > 0,
+                    userData.candidateProfile?.experienceYears,
+                    userData.candidateProfile?.resumeId
+                ];
+                const filled = fields.filter(f => f && (typeof f === 'boolean' ? f : String(f).trim().length > 0)).length;
+                const completion = Math.round((filled / fields.length) * 100);
 
                 setStats([
                     { label: 'Applications', value: appCount.toString(), icon: '📝' },
@@ -70,10 +78,12 @@ const CandidateDashboard = () => {
             const fields = [
                 user.name,
                 user.bio,
+                user.candidateProfile?.headline,
+                user.candidateProfile?.location,
                 user.linkedInUrl,
-                user.candidateProfile?.resumeId,
                 user.candidateProfile?.skills?.length > 0,
-                user.candidateProfile?.experienceYears
+                user.candidateProfile?.experienceYears,
+                user.candidateProfile?.resumeId
             ];
             const filled = fields.filter(f => f && (typeof f === 'boolean' ? f : String(f).trim().length > 0)).length;
             return Math.round((filled / fields.length) * 100);

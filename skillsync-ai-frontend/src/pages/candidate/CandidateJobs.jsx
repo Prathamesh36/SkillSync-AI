@@ -5,6 +5,7 @@ import { jobsAPI, userAPI, applicationsAPI } from '../../services/api';
 import JobDetailsModal from '../../components/JobDetailsModal';
 import JobFilters from '../../components/JobFilters';
 import { useToast } from '../../components/Toast';
+import ConfirmationModal from '../../components/ConfirmationModal';
 
 const CandidateJobs = () => {
     const toast = useToast();
@@ -14,6 +15,8 @@ const CandidateJobs = () => {
     const [resumeId, setResumeId] = useState(null);
     const [selectedJob, setSelectedJob] = useState(null);
     const [appliedJobIds, setAppliedJobIds] = useState(new Set());
+    const [confirmModal, setConfirmModal] = useState({ show: false, jobId: null });
+
     const [filters, setFilters] = useState({
         jobType: '',
         employmentType: '',
@@ -132,21 +135,24 @@ const CandidateJobs = () => {
         }
     };
 
-    const handleApply = async (jobId) => {
+    const handleApply = (jobId) => {
         if (!resumeId) {
             toast.warning('Please upload a resume first via your Profile page.');
             return;
         }
+        setConfirmModal({ show: true, jobId });
+    };
 
-        if (window.confirm('Are you sure you want to apply for this job?')) {
-            try {
-                await jobsAPI.applyForJob(jobId, resumeId);
-                toast.success('Application submitted successfully!');
-                await fetchUserApplications(); // Refresh applied IDs
-                fetchJobs();
-            } catch (error) {
-                toast.error('Failed to apply: ' + (error.response?.data?.message || error.message));
-            }
+    const handleConfirmApply = async () => {
+        const jobId = confirmModal.jobId;
+        setConfirmModal({ show: false, jobId: null });
+        try {
+            await jobsAPI.applyForJob(jobId, resumeId);
+            toast.success('Application submitted successfully!');
+            await fetchUserApplications(); // Refresh applied IDs
+            fetchJobs();
+        } catch (error) {
+            toast.error('Failed to apply: ' + (error.response?.data?.message || error.message));
         }
     };
 
@@ -160,7 +166,7 @@ const CandidateJobs = () => {
             </div>
 
             <div style={{ display: 'flex', gap: '2rem', alignItems: 'start' }}>
-                <aside style={{ width: '250px', flexShrink: 0, display: window.innerWidth < 900 ? 'none' : 'block' }}>
+                <aside className="sticky-filters" style={{ width: '250px', flexShrink: 0, display: window.innerWidth < 900 ? 'none' : 'block' }}>
                     <JobFilters
                         filters={filters}
                         onChange={setFilters}
@@ -270,6 +276,14 @@ const CandidateJobs = () => {
                     onClose={() => setSelectedJob(null)}
                 />
             )}
+
+            <ConfirmationModal
+                show={confirmModal.show}
+                title="Confirm Application"
+                message="Are you sure you want to apply for this job? Your profile and resume will be shared with the recruiter."
+                onConfirm={handleConfirmApply}
+                onCancel={() => setConfirmModal({ show: false, jobId: null })}
+            />
         </DashboardLayout>
     );
 };

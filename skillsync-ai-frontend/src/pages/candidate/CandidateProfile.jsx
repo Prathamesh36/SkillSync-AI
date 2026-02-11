@@ -51,7 +51,8 @@ const CandidateProfile = () => {
             formData.location,
             formData.linkedInUrl,
             formData.skills,
-            formData.experienceYears
+            formData.experienceYears,
+            user.candidateProfile?.resumeId
         ];
         const filled = fields.filter(f => (f !== null && f !== undefined && String(f).trim().length > 0)).length;
         return Math.round((filled / fields.length) * 100);

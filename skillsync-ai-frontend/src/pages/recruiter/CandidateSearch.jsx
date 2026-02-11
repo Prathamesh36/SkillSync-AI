@@ -29,7 +29,7 @@ const CandidateSearch = () => {
         // Fetch jobs to allow searching by job context
         const fetchJobs = async () => {
             try {
-                const data = await jobsAPI.getAllJobs();
+                const data = await jobsAPI.getMyJobs();
                 setJobs(data);
                 if (data.length > 0) setSelectedJobId(data[0].id);
             } catch (error) {

@@ -20,9 +20,11 @@ public class JobMatchController {
     @PreAuthorize("hasRole('RECRUITER')")
     public ResponseEntity<List<MatchedCandidateDTO>> getMatchedCandidates(
             @PathVariable Long jobId,
-            @RequestParam(defaultValue = "10") int top) {
+            @RequestParam(defaultValue = "10") int top,
+            org.springframework.security.core.Authentication authentication) {
 
-        List<MatchedCandidateDTO> matches = jobMatchingService.getMatchedCandidates(jobId, top);
+        List<MatchedCandidateDTO> matches = jobMatchingService.getMatchedCandidates(jobId, top,
+                authentication.getName());
         return ResponseEntity.ok(matches);
     }
 }

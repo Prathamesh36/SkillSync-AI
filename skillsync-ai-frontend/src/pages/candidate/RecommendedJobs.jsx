@@ -1,32 +1,82 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/DashboardLayout';
-import { jobsAPI } from '../../services/api';
+import { jobsAPI, userAPI, applicationsAPI } from '../../services/api';
 import JobDetailsModal from '../../components/JobDetailsModal';
+import { useToast } from '../../components/Toast';
+import ConfirmationModal from '../../components/ConfirmationModal';
 
 const RecommendedJobs = () => {
+    const toast = useToast();
     const [recommendations, setRecommendations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [expandedExplanations, setExpandedExplanations] = useState({}); // Map jobId -> explanation
     const [loadingExplanations, setLoadingExplanations] = useState(new Set()); // Set of jobIds loading
     const [selectedJob, setSelectedJob] = useState(null); // { jobId, applicationStatus }
+    const [resumeId, setResumeId] = useState(null);
+    const [appliedJobIds, setAppliedJobIds] = useState(new Set());
+    const [confirmModal, setConfirmModal] = useState({ show: false, jobId: null });
+
 
     useEffect(() => {
-        const fetchRecommendations = async () => {
-            try {
-                const data = await jobsAPI.getRecommendedJobs(10, 0.5);
-                setRecommendations(data);
-            } catch (err) {
-                console.error('Failed to fetch recommendations', err);
-                setError('Could not load recommendations. Please ensure you have uploaded a resume.');
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchRecommendations();
+        fetchUserProfile();
+        fetchUserApplications();
     }, []);
+
+    const fetchUserApplications = async () => {
+        try {
+            const data = await applicationsAPI.getMyApplications();
+            setAppliedJobIds(new Set(data.map(app => app.jobId)));
+        } catch (error) {
+            console.error('Failed to fetch user applications', error);
+        }
+    };
+
+    const fetchUserProfile = async () => {
+        try {
+            const user = await userAPI.getCurrentUser();
+            setResumeId(user?.candidateProfile?.resumeId);
+        } catch (error) {
+            console.error('Failed to fetch user profile', error);
+        }
+    };
+
+    const fetchRecommendations = async () => {
+        setLoading(true);
+        try {
+            const data = await jobsAPI.getRecommendedJobs(10, 0.5);
+            setRecommendations(data);
+        } catch (err) {
+            console.error('Failed to fetch recommendations', err);
+            setError('Could not load recommendations. Please ensure you have uploaded a resume.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleApply = (jobId) => {
+        if (!resumeId) {
+            toast.warning('Please upload a resume first via your Profile page.');
+            return;
+        }
+        setConfirmModal({ show: true, jobId });
+    };
+
+    const handleConfirmApply = async () => {
+        const jobId = confirmModal.jobId;
+        setConfirmModal({ show: false, jobId: null });
+
+        try {
+            await jobsAPI.applyForJob(jobId, resumeId);
+            toast.success('Application submitted successfully!');
+            await fetchUserApplications(); // Refresh applied IDs
+            fetchRecommendations(); // Refresh list to update status
+        } catch (error) {
+            toast.error('Failed to apply: ' + (error.response?.data?.message || error.message));
+        }
+    };
 
     const getScoreColor = (score) => {
         if (score >= 80) return '#22c55e'; // Green
@@ -230,30 +280,31 @@ const RecommendedJobs = () => {
                                         View Details
                                     </button>
 
-                                    {job.applicationStatus === 'APPLY_NOW' ? (
-                                        <Link
-                                            to={`/candidate/jobs?apply=${job.jobId}`}
-                                            className="btn-primary"
-                                            style={{ padding: '0.6rem 1.2rem', fontSize: '0.85rem' }}
-                                        >
-                                            Apply Now
-                                        </Link>
+                                    {appliedJobIds.has(job.jobId) || job.applicationStatus === 'APPLIED' ? (
+                                        <span style={{
+                                            color: 'var(--text-muted)',
+                                            fontSize: '0.85rem',
+                                            fontStyle: 'italic',
+                                            textAlign: 'center'
+                                        }}>
+                                            Already Applied
+                                        </span>
                                     ) : job.applicationStatus === 'INVITED' ? (
                                         <Link
                                             to="/candidate/invitations"
                                             className="btn-secondary"
-                                            style={{ padding: '0.6rem 1.2rem', fontSize: '0.85rem' }}
+                                            style={{ padding: '0.6rem 1.2rem', fontSize: '0.85rem', textAlign: 'center' }}
                                         >
                                             View Invite
                                         </Link>
                                     ) : (
-                                        <span style={{
-                                            color: 'var(--text-muted)',
-                                            fontSize: '0.85rem',
-                                            fontStyle: 'italic'
-                                        }}>
-                                            Already Applied
-                                        </span>
+                                        <button
+                                            onClick={() => handleApply(job.jobId)}
+                                            className="btn-primary"
+                                            style={{ padding: '0.6rem 1.2rem', fontSize: '0.85rem' }}
+                                        >
+                                            Apply Now
+                                        </button>
                                     )}
                                 </div>
                             </div>
@@ -301,6 +352,14 @@ const RecommendedJobs = () => {
                     onClose={() => setSelectedJob(null)}
                 />
             )}
+
+            <ConfirmationModal
+                show={confirmModal.show}
+                title="Confirm Application"
+                message="Are you sure you want to apply for this job? Your profile and resume will be shared with the recruiter."
+                onConfirm={handleConfirmApply}
+                onCancel={() => setConfirmModal({ show: false, jobId: null })}
+            />
         </DashboardLayout>
     );
 };

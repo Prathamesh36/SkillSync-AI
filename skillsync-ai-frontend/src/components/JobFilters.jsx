@@ -25,10 +25,7 @@ const JobFilters = ({ filters, onChange, onClear }) => {
             background: 'white',
             padding: '1.5rem',
             borderRadius: 'var(--radius-card)',
-            boxShadow: 'var(--shadow-card)',
-            alignSelf: 'start',
-            position: 'sticky',
-            top: '2rem'
+            boxShadow: 'var(--shadow-card)'
         }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--text-main)' }}>Filters</h3>

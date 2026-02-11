@@ -1,9 +1,17 @@
 import React from 'react';
-import { jobsAPI } from '../services/api';
-
+import { jobsAPI, userAPI } from '../services/api';
 import { Link } from 'react-router-dom';
+import { useToast } from './Toast';
+import ConfirmationModal from './ConfirmationModal';
 
 const JobDetailsModal = ({ jobId, onClose, applicationStatus, aiExplanation }) => {
+    const toast = useToast();
+    const [resumeId, setResumeId] = React.useState(null);
+    const [applying, setApplying] = React.useState(false);
+    const [internalStatus, setInternalStatus] = React.useState(applicationStatus);
+    const [showConfirm, setShowConfirm] = React.useState(false);
+
+
     const [job, setJob] = React.useState(null);
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState(null);
@@ -14,6 +22,44 @@ const JobDetailsModal = ({ jobId, onClose, applicationStatus, aiExplanation }) =
         if (min && max) return `${curr} ${min.toLocaleString()} - ${max.toLocaleString()}`;
         if (min) return `${curr} ${min.toLocaleString()}+`;
         return `${curr} up to ${max.toLocaleString()}`;
+    };
+
+    React.useEffect(() => {
+        const fetchUserProfile = async () => {
+            try {
+                const user = await userAPI.getCurrentUser();
+                setResumeId(user?.candidateProfile?.resumeId);
+            } catch (error) {
+                console.error('Failed to fetch user profile', error);
+            }
+        };
+        fetchUserProfile();
+    }, []);
+
+    React.useEffect(() => {
+        setInternalStatus(applicationStatus);
+    }, [applicationStatus]);
+
+    const handleApply = () => {
+        if (!resumeId) {
+            toast.warning('Please upload a resume first via your Profile page.');
+            return;
+        }
+        setShowConfirm(true);
+    };
+
+    const handleConfirmApply = async () => {
+        setShowConfirm(false);
+        setApplying(true);
+        try {
+            await jobsAPI.applyForJob(jobId, resumeId);
+            toast.success('Application submitted successfully!');
+            setInternalStatus('APPLIED');
+        } catch (error) {
+            toast.error('Failed to apply: ' + (error.response?.data?.message || error.message));
+        } finally {
+            setApplying(false);
+        }
     };
 
     React.useEffect(() => {
@@ -240,15 +286,15 @@ const JobDetailsModal = ({ jobId, onClose, applicationStatus, aiExplanation }) =
                                 >
                                     {job.active ? 'Application Closed' : 'Job Closed'}
                                 </button>
-                            ) : applicationStatus === 'APPLY_NOW' ? (
-                                <Link
-                                    to={`/candidate/jobs?apply=${jobId}`}
-                                    className="btn-primary"
-                                    style={{ textDecoration: 'none', display: 'inline-block', textAlign: 'center' }}
+                            ) : internalStatus === 'APPLIED' ? (
+                                <button
+                                    disabled
+                                    className="btn-secondary"
+                                    style={{ opacity: 0.6, cursor: 'not-allowed', background: '#f3f4f6' }}
                                 >
-                                    Apply Now
-                                </Link>
-                            ) : applicationStatus === 'INVITED' ? (
+                                    Already Applied
+                                </button>
+                            ) : internalStatus === 'INVITED' ? (
                                 <Link
                                     to="/candidate/invitations"
                                     className="btn-secondary"
@@ -258,17 +304,26 @@ const JobDetailsModal = ({ jobId, onClose, applicationStatus, aiExplanation }) =
                                 </Link>
                             ) : (
                                 <button
-                                    disabled
-                                    className="btn-secondary"
-                                    style={{ opacity: 0.6, cursor: 'not-allowed', background: '#f3f4f6' }}
+                                    onClick={handleApply}
+                                    disabled={applying}
+                                    className="btn-primary"
+                                    style={{ display: 'inline-block', textAlign: 'center' }}
                                 >
-                                    Already Applied
+                                    {applying ? 'Applying...' : 'Apply Now'}
                                 </button>
                             )}
                         </div>
                     </div>
                 ) : null}
             </div>
+
+            <ConfirmationModal
+                show={showConfirm}
+                title="Confirm Application"
+                message={`Are you sure you want to apply for ${job?.title}? Your profile and resume will be shared with the recruiter at ${job?.companyName}.`}
+                onConfirm={handleConfirmApply}
+                onCancel={() => setShowConfirm(false)}
+            />
         </div >
     );
 };

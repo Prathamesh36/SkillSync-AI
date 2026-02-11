@@ -373,7 +373,7 @@ body {
   flex: 1;
   margin-left: 260px; /* Width of sidebar */
   padding: 2rem;
-  overflow-y: auto;
+  /* overflow-y: auto; */
 }
 
 .sidebar-header {
@@ -680,4 +680,13 @@ body {
 
 .join-meeting-btn span {
   font-size: 1rem;
+}
+
+.sticky-filters {
+  position: -webkit-sticky;
+  position: sticky !important;
+  top: 2rem;
+  align-self: flex-start;
+  z-index: 10;
+  height: max-content;
 }

@@ -328,39 +328,131 @@ const CandidateInterviews = () => {
 
     const renderSetup = () => (
         <div className="dashboard-grid">
-            <div className="stat-card" style={{ gridColumn: 'span 2', textAlign: 'center', padding: '3rem' }}>
-                <h2 style={{ marginBottom: '2rem', fontSize: '1.8rem' }}>Choose Interview Type</h2>
-                <div style={{ display: 'flex', gap: '2rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div className="stat-card" style={{ gridColumn: 'span 2', textAlign: 'center', padding: '3.5rem 2rem' }}>
+                <h2 style={{ marginBottom: '1rem', fontSize: '2rem', fontWeight: '700' }}>Choose Interview Type</h2>
+                <p style={{ color: 'var(--text-muted)', marginBottom: '3rem' }}>Select how you want to prepare for your next big opportunity</p>
+
+                <div style={{ display: 'flex', gap: '2.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                     <div
                         onClick={handleStartResumeInterview}
                         className="interview-type-card"
                         style={{
-                            background: '#eff6ff', border: '2px solid #3b82f6', borderRadius: '1rem',
-                            padding: '2rem', width: '300px', cursor: 'pointer', transition: 'all 0.2s',
-                            display: 'flex', flexDirection: 'column', alignItems: 'center'
+                            background: 'white',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: 'var(--radius-card)',
+                            padding: '3rem 2rem',
+                            width: '320px',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            boxShadow: 'var(--shadow-card)',
+                            textAlign: 'center',
+                            position: 'relative',
+                            overflow: 'hidden'
+                        }}
+                        onMouseOver={e => {
+                            e.currentTarget.style.transform = 'translateY(-8px)';
+                            e.currentTarget.style.borderColor = 'var(--primary)';
+                            e.currentTarget.style.boxShadow = '0 30px 60px -12px rgba(245, 200, 66, 0.2)';
+                        }}
+                        onMouseOut={e => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.borderColor = '#e5e7eb';
+                            e.currentTarget.style.boxShadow = 'var(--shadow-card)';
                         }}
                     >
-                        <span style={{ fontSize: '3rem', marginBottom: '1rem' }}>📄</span>
-                        <h3 style={{ fontSize: '1.2rem', fontWeight: '700', color: '#1e3a8a' }}>Resume Based</h3>
-                        <p style={{ color: '#64748b', marginTop: '0.5rem' }}>
+                        <div style={{
+                            width: '80px',
+                            height: '80px',
+                            background: '#fffbeb',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '2.5rem',
+                            marginBottom: '1.5rem',
+                            border: '1px solid #fef3c7'
+                        }}>
+                            📄
+                        </div>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-main)' }}>Resume Based</h3>
+                        <p style={{ color: 'var(--text-muted)', marginTop: '0.75rem', fontSize: '0.95rem', lineHeight: '1.6' }}>
                             AI scans your resume and asks relevant questions based on your skills and experience.
                         </p>
+                        <div style={{
+                            marginTop: '1.5rem',
+                            color: 'var(--primary)',
+                            fontWeight: '600',
+                            fontSize: '0.9rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                        }}>
+                            Start Prep →
+                        </div>
                     </div>
 
                     <div
                         onClick={() => setMode('TOPIC_FORM')}
                         className="interview-type-card"
                         style={{
-                            background: '#fef3c7', border: '2px solid #d97706', borderRadius: '1rem',
-                            padding: '2rem', width: '300px', cursor: 'pointer', transition: 'all 0.2s',
-                            display: 'flex', flexDirection: 'column', alignItems: 'center'
+                            background: 'white',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: 'var(--radius-card)',
+                            padding: '3rem 2rem',
+                            width: '320px',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            boxShadow: 'var(--shadow-card)',
+                            textAlign: 'center',
+                            position: 'relative',
+                            overflow: 'hidden'
+                        }}
+                        onMouseOver={e => {
+                            e.currentTarget.style.transform = 'translateY(-8px)';
+                            e.currentTarget.style.borderColor = 'var(--primary)';
+                            e.currentTarget.style.boxShadow = '0 30px 60px -12px rgba(245, 200, 66, 0.2)';
+                        }}
+                        onMouseOut={e => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.borderColor = '#e5e7eb';
+                            e.currentTarget.style.boxShadow = 'var(--shadow-card)';
                         }}
                     >
-                        <span style={{ fontSize: '3rem', marginBottom: '1rem' }}>💡</span>
-                        <h3 style={{ fontSize: '1.2rem', fontWeight: '700', color: '#92400e' }}>Topic Based</h3>
-                        <p style={{ color: '#78350f', marginTop: '0.5rem' }}>
+                        <div style={{
+                            width: '80px',
+                            height: '80px',
+                            background: '#fffbeb',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '2.5rem',
+                            marginBottom: '1.5rem',
+                            border: '1px solid #fef3c7'
+                        }}>
+                            💡
+                        </div>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: '700', color: 'var(--text-main)' }}>Topic Based</h3>
+                        <p style={{ color: 'var(--text-muted)', marginTop: '0.75rem', fontSize: '0.95rem', lineHeight: '1.6' }}>
                             Choose specific topics (e.g., Java, React, System Design) to practice focused questions.
                         </p>
+                        <div style={{
+                            marginTop: '1.5rem',
+                            color: 'var(--primary)',
+                            fontWeight: '600',
+                            fontSize: '0.9rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                        }}>
+                            Configure Prep →
+                        </div>
                     </div>
                 </div>
             </div>
