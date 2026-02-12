@@ -194,20 +194,123 @@ K8s manifests provided for:
 
 ## 📡 API Documentation
 
-### Core Endpoints
+> Base URL: `http://localhost:9090/api`
+> All endpoints except those marked 🌐 (Public) require a valid JWT token in the `Authorization: Bearer <token>` header.
 
-| Category | Endpoints |
-|---|---|
-| **Auth** | `POST /api/auth/login`, `POST /api/users` (register) |
-| **Users** | `GET /api/users/me`, `PUT /api/users/{id}`, `GET /api/users/{id}/profile` |
-| **Resumes** | `POST /api/resumes/upload`, `DELETE /api/resumes`, `GET /api/resumes/{id}/download` |
-| **Jobs** | `GET /api/jobs`, `POST /api/jobs`, `PUT /api/jobs/{id}`, `GET /api/jobs/search`, `GET /api/jobs/filter` |
-| **Applications** | `POST /api/jobs/{id}/apply`, `GET /api/applications/my`, `PATCH /api/applications/{id}/shortlist` |
-| **Job Matching** | `GET /api/jobs/{id}/matches` |
-| **Recommendations** | `GET /api/jobs/recommended`, `GET /api/jobs/{id}/explanation` |
-| **Invitations** | `POST /api/jobs/{id}/invite`, `GET /api/invitations/my`, `POST /api/invitations/{token}/accept` |
-| **Interview Scheduling** | `POST /api/interviews/schedule/{appId}`, `PUT /api/interviews/{id}/reschedule`, `PUT /api/interviews/{id}/cancel` |
-| **Mock Interviews** | `POST /api/interviews/start-resume`, `POST /api/interviews/start-topic`, `POST /api/interviews/{id}/answer`, `POST /api/interviews/{id}/end` |
+---
+
+### 🔐 Authentication
+
+| Method | Endpoint | Role | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/auth/login` | 🌐 Public | Authenticate with email and password; returns JWT token and user details |
+
+---
+
+### 👤 Users
+
+| Method | Endpoint | Role | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/users` | 🌐 Public | Register a new user account (CANDIDATE or RECRUITER role) |
+| `GET` | `/api/users/me` | Authenticated | Get the currently logged-in user's profile information |
+| `GET` | `/api/users/{id}` | Authenticated | Fetch a specific user's details by their ID |
+| `GET` | `/api/users` | Authenticated | List all registered users in the system |
+| `PUT` | `/api/users/{id}` | Authenticated | Update a user's profile (name, bio, LinkedIn URL, etc.) |
+| `DELETE` | `/api/users/{id}` | Authenticated | Delete a user account permanently |
+
+---
+
+### 📄 Resumes
+
+| Method | Endpoint | Role | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/resumes/upload` | CANDIDATE | Upload a resume file (PDF/DOCX); AI parses it, extracts skills/experience, stores embedding in vector DB |
+| `DELETE` | `/api/resumes/me` | CANDIDATE | Delete the current candidate's resume (blocked if resume is linked to active applications) |
+| `GET` | `/api/resumes/download/{resumeId}` | Authenticated | Download a resume file by its ID as an attachment |
+
+---
+
+### 💼 Jobs
+
+| Method | Endpoint | Role | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/jobs` | RECRUITER | Create a new job posting (requires 100% profile completion) |
+| `GET` | `/api/jobs` | Authenticated | List all active job postings |
+| `GET` | `/api/jobs/{id}` | Authenticated | Get full details of a specific job |
+| `GET` | `/api/jobs/my` | RECRUITER | List all jobs posted by the authenticated recruiter |
+| `PUT` | `/api/jobs/{id}` | RECRUITER | Update an existing job posting (owner only) |
+| `DELETE` | `/api/jobs/{id}` | RECRUITER | Delete a job posting (owner only) |
+| `GET` | `/api/jobs/search` | 🌐 Public | Search jobs by keyword query (title, description, skills) |
+| `GET` | `/api/jobs/filter` | Authenticated | Filter jobs by type, employment type, location, salary range, and skill |
+| `PATCH` | `/api/jobs/{id}/status` | RECRUITER | Toggle a job's active/inactive status (owner only) |
+
+---
+
+### 📋 Applications
+
+| Method | Endpoint | Role | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/jobs/{jobId}/apply` | CANDIDATE | Apply for a job with an uploaded resume |
+| `GET` | `/api/candidates/me/applications` | CANDIDATE | List all job applications submitted by the current candidate |
+| `GET` | `/api/candidates/me/interviews` | CANDIDATE | List all scheduled interviews for the current candidate |
+| `GET` | `/api/recruiter/jobs/{jobId}/applications` | RECRUITER | View all applications for a specific job, optionally filtered by status |
+| `GET` | `/api/recruiter/applications` | RECRUITER | View all applications across all jobs posted by the recruiter |
+| `GET` | `/api/recruiter/stats` | RECRUITER | Get dashboard statistics (total jobs, applications, shortlisted, interviews) |
+| `PATCH` | `/api/applications/{applicationId}/status` | RECRUITER | Update an application's status (e.g., REVIEWED, REJECTED, OFFERED) |
+| `PATCH` | `/api/applications/{applicationId}/shortlist` | RECRUITER | Shortlist a candidate's application for further review |
+
+---
+
+### 📅 Interview Scheduling
+
+| Method | Endpoint | Role | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/applications/{applicationId}/schedule-interview` | RECRUITER | Schedule an interview for a shortlisted candidate (sends email + .ics calendar invite) |
+| `PATCH` | `/api/interviews/{interviewId}/reschedule` | RECRUITER | Reschedule an existing interview to a new date/time (sends updated notification) |
+| `PATCH` | `/api/interviews/{interviewId}/cancel` | RECRUITER | Cancel a scheduled interview with a reason (reverts application to SHORTLISTED) |
+| `GET` | `/api/recruiter/jobs/{jobId}/interviews` | RECRUITER | List all scheduled interviews for a specific job |
+| `GET` | `/api/recruiter/interviews` | RECRUITER | List all scheduled interviews across all recruiter's jobs |
+
+---
+
+### 🤖 AI Mock Interviews
+
+| Method | Endpoint | Role | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/interviews/mock/start` | CANDIDATE | Start a resume-based mock interview; AI generates the first question from candidate profile |
+| `POST` | `/api/interviews/mock/topic/start` | CANDIDATE | Start a topic-based mock interview with custom topics and difficulty level |
+| `POST` | `/api/interviews/mock/{sessionId}/answer` | CANDIDATE | Submit an answer to the current question; AI evaluates with score, strengths, and weaknesses |
+| `POST` | `/api/interviews/mock/{sessionId}/end` | CANDIDATE | End the interview session early; AI generates final feedback summary |
+| `GET` | `/api/interviews/mock/{sessionId}/transcript` | CANDIDATE | Retrieve the full Q&A transcript with evaluations for a completed session |
+| `GET` | `/api/interviews/mock/history` | CANDIDATE | List all past completed mock interview sessions with scores |
+
+---
+
+### 🎯 AI Job Matching (Recruiter)
+
+| Method | Endpoint | Role | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/jobs/{jobId}/matches` | RECRUITER | Find top matching candidates for a job using vector similarity search + hybrid scoring |
+
+---
+
+### 💡 AI Job Recommendations (Candidate)
+
+| Method | Endpoint | Role | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/candidates/me/recommended-jobs` | CANDIDATE | Get AI-powered job recommendations based on resume embeddings; filterable by score threshold and location |
+| `GET` | `/api/candidates/me/recommended-jobs/{jobId}/explanation` | CANDIDATE | Get an AI-generated natural language explanation of why a specific job is recommended |
+
+---
+
+### 📩 Job Invitations
+
+| Method | Endpoint | Role | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/jobs/{jobId}/invite` | RECRUITER | Invite a matched candidate to apply for a job (sends email notification with invite link) |
+| `GET` | `/api/candidates/me/invitations` | CANDIDATE | List all job invitations received by the current candidate |
+| `POST` | `/api/invitations/{token}/accept` | CANDIDATE | Accept a job invitation using the secure token; auto-creates a job application |
+| `POST` | `/api/invitations/{token}/decline` | CANDIDATE | Decline a job invitation using the secure token |
 
 ---
 
