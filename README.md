@@ -19,6 +19,47 @@ SkillSync AI reimagines the hiring pipeline with AI at every stage:
 - **Interview Scheduling** — Recruiters schedule, reschedule, or cancel interviews with automatic email notifications and `.ics` calendar invites.
 
 ---
+## 🛠️ Tech Stack
+
+### Backend
+| Technology | Version | Purpose |
+|---|---|---|
+| Java | 21 | Language runtime |
+| Spring Boot | 3.5.10 | Application framework |
+| Spring AI | 1.1.2 | LLM integration (chat, embeddings, structured output) |
+| Spring Security | 6.x | Authentication & authorization |
+| Spring Data JPA | — | ORM / data access |
+| Spring Mail | — | Email notifications (SMTP) |
+| Spring Retry | — | Retry logic for AI calls |
+| PostgreSQL | 16 | Relational database |
+| pgvector | — | Vector similarity search |
+| Apache Tika | — | Document text extraction |
+| jjwt | 0.12.5 | JWT token generation & validation |
+| ModelMapper | 3.2.0 | DTO ↔ Entity mapping |
+| Lombok | — | Boilerplate reduction |
+| Maven | — | Build tool |
+
+### Frontend
+| Technology | Version | Purpose |
+|---|---|---|
+| React | 19.2 | UI framework |
+| Vite | 7.2 | Build tool & dev server |
+| React Router | 7.13 | Client-side routing |
+| Axios | 1.13 | HTTP client |
+| Framer Motion | 12.33 | Animations & transitions |
+| React Hot Toast | 2.6 | Toast notifications |
+
+### Infrastructure
+| Technology | Purpose |
+|---|---|
+| Docker + Docker Compose | Containerization |
+| Kubernetes | Orchestration (optional) |
+| Nginx | Frontend static serving |
+| PostgreSQL + pgvector | Database + vector store |
+| Ollama | Local LLM inference (fallback) |
+| OpenRouter | Cloud AI model routing |
+
+---
 
 ## ✨ Key Features
 
@@ -43,41 +84,154 @@ SkillSync AI reimagines the hiring pipeline with AI at every stage:
 
 ---
 
-## 🧠 AI Architecture
+## 🗂️ Entity Relationship (ER) Diagram
 
-### Resume Parsing
-Resumes (PDF, DOCX) are processed through **Apache Tika** for text extraction, then sent to an LLM to extract structured data:
-- Full name, email, skills list, years of experience, education summary, professional summary
-- Output is mapped to a typed `ParsedResumeDTO` using Spring AI's structured output (entity extraction)
+```mermaid
+%% Paste your full ER diagram code below this line
 
-### Embeddings & Semantic Search
-- Resume content is embedded using **OpenAI embedding models** and stored in **PostgreSQL with pgvector**
-- Job descriptions are also embedded and stored in the vector store with `docType` metadata (`RESUME` or `JOB`)
-- **Similarity search** uses `SearchRequest` with configurable `topK`, `similarityThreshold`, and `FilterExpression` to find relevant matches
-- This enables true semantic matching — "React developer" matches candidates with "frontend engineering" experience, even without exact keyword overlap
+erDiagram
+    USER ||--o{ CANDIDATE : has
+    USER ||--o{ RECRUITER : has
+    USER ||--o{ RESUME : owns
+    USER ||--o{ APPLICATION : submits
+    USER ||--o{ JOB_INVITATION : receives
+    USER ||--o{ INTERVIEW : participates
+    USER ||--o{ MATCH_RESULT : generates
+    
+    CANDIDATE ||--o{ RESUME : owns
+    CANDIDATE ||--o{ APPLICATION : submits
+    CANDIDATE ||--o{ JOB_INVITATION : receives
+    CANDIDATE ||--o{ INTERVIEW : participates
+    CANDIDATE ||--o{ MATCH_RESULT : generates
+    
+    RECRUITER ||--o{ JOB : posts
+    RECRUITER ||--o{ INTERVIEW : schedules
+    RECRUITER ||--o{ JOB_INVITATION : sends
+    
+    JOB ||--o{ APPLICATION : receives
+    JOB ||--o{ JOB_INVITATION : sends
+    JOB ||--o{ INTERVIEW : has
+    JOB ||--o{ MATCH_RESULT : generates
+    
+    RESUME ||--o{ MATCH_RESULT : used_in
+    
+    USER {
+        Long id PK
+        String email UK
+        String password
+        String role
+        String fullName
+        String phoneNumber
+        String bio
+        Boolean isActive
+        LocalDateTime createdAt
+        LocalDateTime updatedAt
+    }
+    
+    CANDIDATE {
+        Long id PK
+        Long userId UK
+        String headline
+        String location
+        Integer experienceYears
+        List<String> skills
+        String resumeUrl
+        String resumeText
+        String resumeVector
+        LocalDateTime createdAt
+        LocalDateTime updatedAt
+    }
+    
+    RECRUITER {
+        Long id PK
+        Long userId UK
+        String companyName
+        String companyLogoUrl
+        String department
+        String designation
+        LocalDateTime createdAt
+        LocalDateTime updatedAt
+    }
+    
+    JOB {
+        Long id PK
+        Long recruiterId
+        String title
+        String description
+        String location
+        BigDecimal salaryMin
+        BigDecimal salaryMax
+        Integer requiredExperienceYears
+        List<String> skillsRequired
+        String jobType
+        String employmentType
+        Boolean isActive
+        LocalDateTime createdAt
+        LocalDateTime updatedAt
+    }
+    
+    RESUME {
+        Long id PK
+        Long userId
+        String fileName
+        String fileUrl
+        String parsedContent
+        List<String> extractedSkills
+        String embeddingVector
+        LocalDateTime uploadedAt
+    }
+    
+    APPLICATION {
+        Long id PK
+        Long jobId
+        Long candidateId
+        String status
+        String coverLetter
+        LocalDateTime appliedAt
+        LocalDateTime updatedAt
+    }
+    
+    JOB_INVITATION {
+        Long id PK
+        Long jobId
+        Long candidateId
+        String invitationToken
+        String status
+        LocalDateTime sentAt
+        LocalDateTime expiresAt
+        LocalDateTime acceptedAt
+    }
+    
+    INTERVIEW {
+        Long id PK
+        Long jobId
+        Long candidateId
+        Long recruiterId
+        LocalDateTime interviewDateTime
+        String interviewType
+        String status
+        String location
+        String meetingLink
+        LocalDateTime createdAt
+        LocalDateTime updatedAt
+    }
+    
+    MATCH_RESULT {
+        Long id PK
+        Long jobId
+        Long candidateId
+        Double semanticScore
+        Double skillScore
+        Double experienceScore
+        Double locationScore
+        Double finalScore
+        String explanation
+        LocalDateTime createdAt
+    }
 
-### Match Score Calculation
-A **hybrid scoring model** combines:
-- **Skill overlap** (75% weight) — fuzzy substring matching between job requirements and candidate skills
-- **Experience alignment** (25% weight) — proportional scoring based on required vs. actual experience
-- Base score of 30% ensures minimum visibility; total score is capped at 100%
 
-### AI-Powered Explanations
-- Candidates receive **natural language explanations** of why a job was recommended, generated by the LLM using their profile and the job description
-- Fallback from OpenAI to Ollama is built in
 
-### AI Mock Interviews
-- **Resume-based** — AI generates questions tailored to the candidate's skills and experience level
-- **Topic-based** — candidate selects topics and difficulty; AI generates contextual questions
-- Each answer is evaluated in real-time with a JSON-structured response: `score (0–10)`, `strengths`, `weaknesses`
-- After 5 questions, AI generates a final feedback summary
-
-### AI Fallback Strategy
-Every AI call follows a **primary → fallback** pattern:
-1. **Primary**: OpenAI-compatible API (configured via OpenRouter for flexible model routing)
-2. **Fallback**: Local **Ollama** instance (default model: `gemma3:latest`)
-3. **Retry**: Spring Retry with `@EnableRetry` handles transient failures (rate limits, timeouts)
-
+```
 ---
 
 ## 🏗️ System Architecture
@@ -150,45 +304,40 @@ K8s manifests provided for:
 
 ---
 
-## 🛠️ Tech Stack
+## 🧠 AI Architecture
 
-### Backend
-| Technology | Version | Purpose |
-|---|---|---|
-| Java | 21 | Language runtime |
-| Spring Boot | 3.5.10 | Application framework |
-| Spring AI | 1.1.2 | LLM integration (chat, embeddings, structured output) |
-| Spring Security | 6.x | Authentication & authorization |
-| Spring Data JPA | — | ORM / data access |
-| Spring Mail | — | Email notifications (SMTP) |
-| Spring Retry | — | Retry logic for AI calls |
-| PostgreSQL | 16 | Relational database |
-| pgvector | — | Vector similarity search |
-| Apache Tika | — | Document text extraction |
-| jjwt | 0.12.5 | JWT token generation & validation |
-| ModelMapper | 3.2.0 | DTO ↔ Entity mapping |
-| Lombok | — | Boilerplate reduction |
-| Maven | — | Build tool |
+### Resume Parsing
+Resumes (PDF, DOCX) are processed through **Apache Tika** for text extraction, then sent to an LLM to extract structured data:
+- Full name, email, skills list, years of experience, education summary, professional summary
+- Output is mapped to a typed `ParsedResumeDTO` using Spring AI's structured output (entity extraction)
 
-### Frontend
-| Technology | Version | Purpose |
-|---|---|---|
-| React | 19.2 | UI framework |
-| Vite | 7.2 | Build tool & dev server |
-| React Router | 7.13 | Client-side routing |
-| Axios | 1.13 | HTTP client |
-| Framer Motion | 12.33 | Animations & transitions |
-| React Hot Toast | 2.6 | Toast notifications |
+### Embeddings & Semantic Search
+- Resume content is embedded using **OpenAI embedding models** and stored in **PostgreSQL with pgvector**
+- Job descriptions are also embedded and stored in the vector store with `docType` metadata (`RESUME` or `JOB`)
+- **Similarity search** uses `SearchRequest` with configurable `topK`, `similarityThreshold`, and `FilterExpression` to find relevant matches
+- This enables true semantic matching — "React developer" matches candidates with "frontend engineering" experience, even without exact keyword overlap
 
-### Infrastructure
-| Technology | Purpose |
-|---|---|
-| Docker + Docker Compose | Containerization |
-| Kubernetes | Orchestration (optional) |
-| Nginx | Frontend static serving |
-| PostgreSQL + pgvector | Database + vector store |
-| Ollama | Local LLM inference (fallback) |
-| OpenRouter | Cloud AI model routing |
+### Match Score Calculation
+A **hybrid scoring model** combines:
+- **Skill overlap** (75% weight) — fuzzy substring matching between job requirements and candidate skills
+- **Experience alignment** (25% weight) — proportional scoring based on required vs. actual experience
+- Base score of 30% ensures minimum visibility; total score is capped at 100%
+
+### AI-Powered Explanations
+- Candidates receive **natural language explanations** of why a job was recommended, generated by the LLM using their profile and the job description
+- Fallback from OpenAI to Ollama is built in
+
+### AI Mock Interviews
+- **Resume-based** — AI generates questions tailored to the candidate's skills and experience level
+- **Topic-based** — candidate selects topics and difficulty; AI generates contextual questions
+- Each answer is evaluated in real-time with a JSON-structured response: `score (0–10)`, `strengths`, `weaknesses`
+- After 5 questions, AI generates a final feedback summary
+
+### AI Fallback Strategy
+Every AI call follows a **primary → fallback** pattern:
+1. **Primary**: OpenAI-compatible API (configured via OpenRouter for flexible model routing)
+2. **Fallback**: Local **Ollama** instance (default model: `gemma3:latest`)
+3. **Retry**: Spring Retry with `@EnableRetry` handles transient failures (rate limits, timeouts)
 
 ---
 
