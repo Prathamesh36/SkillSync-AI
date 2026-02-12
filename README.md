@@ -60,6 +60,7 @@ SkillSync AI reimagines the hiring pipeline with AI at every stage:
 | jjwt | 0.12.5 | JWT token generation & validation |
 | ModelMapper | 3.2.0 | DTO ↔ Entity mapping |
 | Lombok | — | Boilerplate reduction |
+| MinIO Client | 8.5.7 | Object storage client |
 | Maven | — | Build tool |
 
 ### Frontend
@@ -79,6 +80,7 @@ SkillSync AI reimagines the hiring pipeline with AI at every stage:
 | Kubernetes | Orchestration (optional) |
 | Nginx | Frontend static serving |
 | PostgreSQL + pgvector | Database + vector store |
+| MinIO | S3-compatible object storage |
 | Ollama | Local LLM inference (fallback) |
 | OpenRouter | Cloud AI model routing |
 
@@ -313,7 +315,7 @@ erDiagram
 ### Storage Architecture
 - **PostgreSQL** (pgvector/pg16) — relational data + vector embeddings in a single database (`vectordb`)
 - **pgvector extension** — initialized via `init-db.sql` (`CREATE EXTENSION IF NOT EXISTS vector`)
-- **Resume files** — stored on the server filesystem (`uploads/` directory)
+- **Resume files** — stored in **MinIO** (S3-compatible object storage)
 - **Vector Store** — `PgVectorStore` managed by Spring AI for automatic embedding storage and similarity search
 
 ---
@@ -333,7 +335,9 @@ erDiagram
       +---> [ResumeController] -> [AIService] 
       |           |
       |           +---> [OpenAI / Ollama] (LLM Parsing)
-      |           +---> [Local Storage] (File Uploads)
+      |           +---> [OpenAI / Ollama] (LLM Parsing)
+      |           +---> [MinIO] (Object Storage)
+      |           +---> [PGVector] (Embeddings)
       |           +---> [PGVector] (Embeddings)
       |
       +---> [JobController] -> [JobService] -> [PostgreSQL (Jobs)]
@@ -362,11 +366,12 @@ sequenceDiagram
     participant Controller as ResumeController
     participant Service as AIService
     participant LLM as OpenAI/Ollama
+    participant LLM as OpenAI/Ollama
     participant DB as PostgreSQL
-    participant FS as FileSystem
+    participant MinIO as ObjectStorage
 
     User->>Controller: POST /upload (File)
-    Controller->>FS: Save File
+    Controller->>MinIO: Upload File (S3)
     Controller->>Service: parseResume(File)
     Service->>Service: Tika Extract Text
     Service->>LLM: Prompt: "Extract structure JSON"
@@ -432,6 +437,7 @@ sequenceDiagram
 | **postgres** | `pgvector/pgvector:pg16`     | `5454` |
 | **backend**  | Multi-stage Maven + Corretto 21 | `9090` |
 | **ollama**   | `ollama/ollama:latest`       | `11434`|
+| **minio**    | `minio/minio:latest`         | `9000` |
 | **frontend** | Multi-stage Node 20 + Nginx  | `5173` |
 
 - Backend waits for PostgreSQL health check before starting
@@ -616,7 +622,9 @@ Every AI call follows a **primary → fallback** pattern:
 - Node.js 20+
 - Maven 3.9+
 - Docker & Docker Compose
+- Docker & Docker Compose
 - PostgreSQL 16 with pgvector extension **or** use Docker
+- MinIO Server (local or container)
 
 ### 1. Clone the Repository
 ```bash
@@ -627,7 +635,7 @@ cd SkillSync-AI
 ### 2. Start Infrastructure (Database + Ollama)
 ```bash
 cd SkillSync-AI
-docker compose up -d postgres ollama
+docker compose up -d postgres ollama minio
 ```
 
 ### 3. Configure Environment Variables
@@ -668,6 +676,7 @@ docker compose up --build -d
 This starts:
 - **PostgreSQL** (pgvector) on port `5454`
 - **Ollama** on port `11434`
+- **MinIO** on port `9000` (Console: `9001`)
 - **Backend** on port `9090`
 - **Frontend** on port `5173`
 
@@ -684,6 +693,9 @@ This starts:
 | `SPRING_DATASOURCE_URL` | PostgreSQL JDBC URL (default: `jdbc:postgresql://localhost:5454/vectordb`) | Optional |
 | `SPRING_DATASOURCE_USERNAME` | Database username (default: `root`) | Optional |
 | `SPRING_DATASOURCE_PASSWORD` | Database password (default: `root`) | Optional |
+| `MINIO_URL` | MinIO server URL (default: `http://localhost:9000`) | ✅ |
+| `MINIO_ACCESS_KEY` | MinIO access key | ✅ |
+| `MINIO_SECRET_KEY` | MinIO secret key | ✅ |
 
 ---
 
@@ -741,7 +753,7 @@ This starts:
 - [ ] Multi-language support for global hiring
 - [ ] OAuth 2.0 social login (Google, LinkedIn)
 - [ ] Swagger/OpenAPI documentation endpoint
-- [ ] S3/MinIO integration for cloud resume storage
+- [x] S3/MinIO integration for cloud resume storage (Completed)
 - [ ] Rate limiting and API throttling
 - [ ] Candidate skill assessment modules
 
