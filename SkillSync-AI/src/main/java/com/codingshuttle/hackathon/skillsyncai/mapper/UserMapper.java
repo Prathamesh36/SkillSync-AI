@@ -86,7 +86,7 @@ public class UserMapper {
                 user.getId(),
                 user.getEmail(),
                 user.getName(),
-                user.getRole(),
+                user.getRole().name(),
                 user.getBio(),
                 user.getLinkedInUrl(),
                 user.getPortfolioUrl(),

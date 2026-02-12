@@ -13,6 +13,10 @@ import com.codingshuttle.hackathon.skillsyncai.repository.UserRepository;
 import com.codingshuttle.hackathon.skillsyncai.repository.ApplicationRepository;
 import com.codingshuttle.hackathon.skillsyncai.repository.MatchResultRepository;
 import com.codingshuttle.hackathon.skillsyncai.service.AIService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.InputStreamResource;
@@ -34,6 +38,7 @@ import org.springframework.http.MediaType;
 @RequestMapping("/api/resumes")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Resumes", description = "Resume upload, AI parsing, embedding storage, and download")
 public class ResumeController {
 
     private final AIService aiService;
@@ -44,6 +49,11 @@ public class ResumeController {
     private final MatchResultRepository matchResultRepository;
 
     @PostMapping("/upload")
+    @Operation(summary = "Upload and parse resume", description = "Uploads a PDF/DOCX resume, parses it with AI to extract skills/experience, updates the candidate profile, and stores a vector embedding for semantic search")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Resume parsed and stored"),
+            @ApiResponse(responseCode = "400", description = "Invalid file or non-candidate user")
+    })
     public ResponseEntity<ParsedResumeDTO> uploadResume(
             org.springframework.security.core.Authentication authentication,
             @RequestParam("file") MultipartFile file) throws IOException {
@@ -147,6 +157,12 @@ public class ResumeController {
     }
 
     @DeleteMapping("/me")
+    @Operation(summary = "Delete current user's resume", description = "Deletes the resume file and record. Blocked if resume is linked to active applications.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Resume deleted"),
+            @ApiResponse(responseCode = "400", description = "Resume in use by active applications"),
+            @ApiResponse(responseCode = "404", description = "Resume not found")
+    })
     public ResponseEntity<Void> deleteResume(org.springframework.security.core.Authentication authentication) {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
@@ -184,6 +200,11 @@ public class ResumeController {
     }
 
     @GetMapping("/download/{resumeId}")
+    @Operation(summary = "Download a resume file", description = "Returns the resume file as an attachment by its ID")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "File returned"),
+            @ApiResponse(responseCode = "404", description = "Resume not found")
+    })
     public ResponseEntity<Resource> downloadResume(@PathVariable Long resumeId) {
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Resume not found with id: " + resumeId));

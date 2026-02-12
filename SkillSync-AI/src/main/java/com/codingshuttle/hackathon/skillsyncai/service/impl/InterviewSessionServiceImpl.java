@@ -56,8 +56,10 @@ public class InterviewSessionServiceImpl implements InterviewSessionService {
                         session.getDifficultyLevel() != null ? session.getDifficultyLevel().name() : null,
                         session.getFinalScore(),
                         session.getQuestionCount(),
+                        MAX_QUESTIONS,
                         session.getStartedAt(),
-                        session.getEndedAt()))
+                        session.getEndedAt(),
+                        session.getStatus().name()))
                 .toList();
     }
 
@@ -97,7 +99,12 @@ public class InterviewSessionServiceImpl implements InterviewSessionService {
         transcript.setEvaluationsJson("[]");
         transcriptRepository.save(transcript);
 
-        return new StartInterviewResponseDTO(savedSession.getId(), firstQuestion);
+        return new StartInterviewResponseDTO(
+                savedSession.getId(),
+                firstQuestion,
+                MAX_QUESTIONS,
+                savedSession.getInterviewMode().name(),
+                savedSession.getDifficultyLevel().name());
     }
 
     @Override
@@ -133,7 +140,12 @@ public class InterviewSessionServiceImpl implements InterviewSessionService {
         transcript.setEvaluationsJson("[]");
         transcriptRepository.save(transcript);
 
-        return new StartInterviewResponseDTO(savedSession.getId(), firstQuestion);
+        return new StartInterviewResponseDTO(
+                savedSession.getId(),
+                firstQuestion,
+                MAX_QUESTIONS,
+                savedSession.getInterviewMode().name(),
+                savedSession.getDifficultyLevel().name());
     }
 
     @Override
@@ -159,6 +171,7 @@ public class InterviewSessionServiceImpl implements InterviewSessionService {
         evalRecord.put("score", evaluation.score());
         evalRecord.put("strengths", evaluation.strengths());
         evalRecord.put("weaknesses", evaluation.weaknesses());
+        evalRecord.put("feedback", evaluation.feedback());
         evaluations.add(evalRecord);
 
         boolean interviewComplete = session.getQuestionCount() >= MAX_QUESTIONS;
@@ -191,7 +204,7 @@ public class InterviewSessionServiceImpl implements InterviewSessionService {
         transcriptRepository.save(transcript);
         sessionRepository.save(session);
 
-        return new SubmitAnswerResponseDTO(evaluation, nextQuestion, interviewComplete);
+        return new SubmitAnswerResponseDTO(evaluation, nextQuestion, interviewComplete, session.getQuestionCount());
     }
 
     @Override
@@ -200,8 +213,11 @@ public class InterviewSessionServiceImpl implements InterviewSessionService {
         InterviewSession session = getAndValidateSession(sessionId, candidateEmail);
 
         if (session.getStatus() == InterviewSessionStatus.COMPLETED) {
-            return new EndInterviewResponseDTO(session.getFinalScore() != null ? session.getFinalScore() : 0.0,
-                    session.getFinalFeedback() != null ? session.getFinalFeedback() : "Interview already completed.");
+            return new EndInterviewResponseDTO(
+                    session.getFinalScore() != null ? session.getFinalScore() : 0.0,
+                    session.getFinalFeedback() != null ? session.getFinalFeedback() : "Interview already completed.",
+                    session.getQuestionCount(),
+                    session.getStatus().name());
         }
 
         InterviewTranscript transcript = transcriptRepository.findByInterviewSessionId(sessionId)
@@ -230,7 +246,11 @@ public class InterviewSessionServiceImpl implements InterviewSessionService {
         session.setFinalFeedback(finalFeedback);
         sessionRepository.save(session);
 
-        return new EndInterviewResponseDTO(finalScore, finalFeedback);
+        return new EndInterviewResponseDTO(
+                finalScore,
+                finalFeedback,
+                session.getQuestionCount(),
+                session.getStatus().name());
     }
 
     @Override
@@ -239,8 +259,27 @@ public class InterviewSessionServiceImpl implements InterviewSessionService {
         getAndValidateSession(sessionId, candidateEmail);
         InterviewTranscript transcript = transcriptRepository.findByInterviewSessionId(sessionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Transcript not found"));
-        return new InterviewTranscriptResponseDTO(parseMessages(transcript.getMessagesJson()),
-                parseEvaluations(transcript.getEvaluationsJson()));
+
+        List<Map<String, String>> messageMaps = parseMessages(transcript.getMessagesJson());
+        List<InterviewTranscriptResponseDTO.MessageDTO> messageDTOs = messageMaps.stream()
+                .map(m -> new InterviewTranscriptResponseDTO.MessageDTO(m.get("role"), m.get("content")))
+                .toList();
+
+        List<Map<String, Object>> evaluationMaps = parseEvaluations(transcript.getEvaluationsJson());
+        List<EvaluationDTO> evaluationDTOs = evaluationMaps.stream()
+                .map(this::mapToEvaluationDTO)
+                .toList();
+
+        return new InterviewTranscriptResponseDTO(messageDTOs, evaluationDTOs);
+    }
+
+    @SuppressWarnings("unchecked")
+    private EvaluationDTO mapToEvaluationDTO(Map<String, Object> map) {
+        int score = map.get("score") instanceof Number ? ((Number) map.get("score")).intValue() : 0;
+        List<String> strengths = (List<String>) map.getOrDefault("strengths", new ArrayList<>());
+        List<String> weaknesses = (List<String>) map.getOrDefault("weaknesses", new ArrayList<>());
+        String feedback = (String) map.getOrDefault("feedback", "Not available");
+        return new EvaluationDTO(score, strengths, weaknesses, feedback);
     }
 
     private InterviewSession getAndValidateSession(UUID sessionId, String candidateEmail) {

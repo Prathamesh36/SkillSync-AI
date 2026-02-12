@@ -1,16 +1,14 @@
 package com.codingshuttle.hackathon.skillsyncai.dto;
 
 import com.codingshuttle.hackathon.skillsyncai.enums.DifficultyLevel;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 
-/**
- * Request DTO for starting a topic-based mock interview.
- */
+@Schema(description = "Request to start a topic-based mock interview")
 public record StartTopicInterviewRequestDTO(
-        @NotEmpty(message = "Topics list cannot be empty") List<String> topics,
-
-        @NotNull(message = "Difficulty level is required") DifficultyLevel difficulty) {
+                @NotEmpty @Schema(description = "Topics to be covered in the interview", example = "[\"Spring Boot\", \"Microservices\", \"System Design\"]") List<String> topics,
+                @NotNull @Schema(description = "Interview difficulty level", example = "MEDIUM") DifficultyLevel difficulty) {
 }

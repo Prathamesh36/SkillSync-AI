@@ -1,10 +1,9 @@
 package com.codingshuttle.hackathon.skillsyncai.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
-/**
- * Request DTO for submitting an answer in a mock interview.
- */
+@Schema(description = "Submit an answer to an interview question")
 public record SubmitAnswerRequestDTO(
-        @NotBlank(message = "Answer cannot be empty") String answer) {
+                @NotBlank @Schema(description = "The candidate's answer to the current question") String answer) {
 }

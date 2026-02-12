@@ -1,18 +1,15 @@
 package com.codingshuttle.hackathon.skillsyncai.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Future;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDateTime;
 
-/**
- * Request DTO for rescheduling an interview.
- */
+@Schema(description = "Request to reschedule an existing interview")
 public record RescheduleInterviewRequestDTO(
-        @NotNull(message = "New interview date/time is required") @Future(message = "Interview date must be in the future") LocalDateTime newInterviewDateTime,
-
-        @NotNull(message = "Duration is required") @Min(value = 15, message = "Duration must be at least 15 minutes") Integer durationMinutes,
-
-        String meetingLink) {
+                @NotNull @Future @Schema(description = "New interview date and time", example = "2026-03-20T10:00:00") LocalDateTime newInterviewDateTime,
+                @NotNull @Schema(description = "Updated duration in minutes", example = "45") Integer durationMinutes,
+                @Schema(description = "Updated meeting link", example = "https://meet.google.com/new-link-456") String meetingLink,
+                @Schema(description = "Reason for rescheduling") String notes) {
 }

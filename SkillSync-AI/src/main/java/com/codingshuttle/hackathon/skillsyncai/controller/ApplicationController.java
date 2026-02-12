@@ -8,6 +8,10 @@ import com.codingshuttle.hackathon.skillsyncai.dto.ScheduleInterviewRequestDTO;
 import com.codingshuttle.hackathon.skillsyncai.dto.StatusUpdateRequestDTO;
 import com.codingshuttle.hackathon.skillsyncai.service.ApplicationService;
 import com.codingshuttle.hackathon.skillsyncai.service.InterviewScheduleService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,17 +30,20 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Applications", description = "Job application lifecycle — apply, review, shortlist, and schedule interviews")
 public class ApplicationController {
 
     private final ApplicationService applicationService;
     private final InterviewScheduleService interviewScheduleService;
 
-    /**
-     * Candidate applies for a job.
-     * POST /jobs/{jobId}/apply
-     */
     @PostMapping("/api/jobs/{jobId}/apply")
     @PreAuthorize("hasRole('CANDIDATE')")
+    @Operation(summary = "Apply for a job", description = "Candidate submits an application with a previously uploaded resume")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Application submitted"),
+            @ApiResponse(responseCode = "400", description = "Already applied or invalid resume"),
+            @ApiResponse(responseCode = "404", description = "Job or resume not found")
+    })
     public ResponseEntity<JobApplicationResponseDTO> applyForJob(
             Authentication authentication,
             @PathVariable Long jobId,
@@ -48,36 +55,30 @@ public class ApplicationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    /**
-     * Candidate views their own applications.
-     * GET /candidates/me/applications
-     */
     @GetMapping("/api/candidates/me/applications")
     @PreAuthorize("hasRole('CANDIDATE')")
+    @Operation(summary = "Get my applications", description = "Lists all job applications submitted by the current candidate")
+    @ApiResponse(responseCode = "200", description = "List of applications")
     public ResponseEntity<List<JobApplicationResponseDTO>> getMyApplications(Authentication authentication) {
         String email = authentication.getName();
         log.debug("Fetching applications for candidate: {}", email);
         return ResponseEntity.ok(applicationService.getMyApplications(email));
     }
 
-    /**
-     * Candidate views their scheduled interviews.
-     * GET /candidates/me/interviews
-     */
     @GetMapping("/api/candidates/me/interviews")
     @PreAuthorize("hasRole('CANDIDATE')")
+    @Operation(summary = "Get my scheduled interviews", description = "Lists all scheduled interviews for the current candidate")
+    @ApiResponse(responseCode = "200", description = "List of interviews")
     public ResponseEntity<List<InterviewResponseDTO>> getMyCandidateInterviews(Authentication authentication) {
         String email = authentication.getName();
         log.debug("Fetching interviews for candidate: {}", email);
         return ResponseEntity.ok(interviewScheduleService.getCandidateInterviews(email));
     }
 
-    /**
-     * Recruiter views applications for a specific job.
-     * GET /recruiter/jobs/{jobId}/applications
-     */
     @GetMapping("/api/recruiter/jobs/{jobId}/applications")
     @PreAuthorize("hasRole('RECRUITER')")
+    @Operation(summary = "Get applications for a job", description = "Recruiter views applications for a specific job, optionally filtered by status")
+    @ApiResponse(responseCode = "200", description = "List of applications")
     public ResponseEntity<List<JobApplicationResponseDTO>> getJobApplications(
             Authentication authentication,
             @PathVariable Long jobId,
@@ -88,12 +89,10 @@ public class ApplicationController {
         return ResponseEntity.ok(applicationService.getApplicationsForJob(jobId, email, status));
     }
 
-    /**
-     * Recruiter views ALL applications across all their jobs.
-     * GET /recruiter/applications
-     */
     @GetMapping("/api/recruiter/applications")
     @PreAuthorize("hasRole('RECRUITER')")
+    @Operation(summary = "Get all recruiter applications", description = "Returns all applications across all jobs posted by the recruiter")
+    @ApiResponse(responseCode = "200", description = "List of all applications")
     public ResponseEntity<List<JobApplicationResponseDTO>> getAllJobApplicationsForRecruiter(
             Authentication authentication) {
         String email = authentication.getName();
@@ -101,12 +100,10 @@ public class ApplicationController {
         return ResponseEntity.ok(applicationService.getApplicationsForRecruiter(email));
     }
 
-    /**
-     * Recruiter views scheduled interviews for a job.
-     * GET /recruiter/jobs/{jobId}/interviews
-     */
     @GetMapping("/api/recruiter/jobs/{jobId}/interviews")
     @PreAuthorize("hasRole('RECRUITER')")
+    @Operation(summary = "Get interviews for a job", description = "Lists all scheduled interviews for a specific job")
+    @ApiResponse(responseCode = "200", description = "List of interviews")
     public ResponseEntity<List<InterviewResponseDTO>> getJobInterviews(
             Authentication authentication,
             @PathVariable Long jobId) {
@@ -116,36 +113,33 @@ public class ApplicationController {
         return ResponseEntity.ok(interviewScheduleService.getRecruiterInterviewsForJob(jobId, email));
     }
 
-    /**
-     * Recruiter views ALL their scheduled interviews across all jobs.
-     * GET /recruiter/interviews
-     */
     @GetMapping("/api/recruiter/interviews")
     @PreAuthorize("hasRole('RECRUITER')")
+    @Operation(summary = "Get all recruiter interviews", description = "Lists all scheduled interviews across all recruiter's jobs")
+    @ApiResponse(responseCode = "200", description = "List of interviews")
     public ResponseEntity<List<InterviewResponseDTO>> getAllRecruiterInterviews(Authentication authentication) {
         String email = authentication.getName();
         log.debug("Fetching all interviews for recruiter: {}", email);
         return ResponseEntity.ok(interviewScheduleService.getInterviewsForRecruiter(email));
     }
 
-    /**
-     * Recruiter views dashboard stats.
-     * GET /recruiter/stats
-     */
     @GetMapping("/api/recruiter/stats")
     @PreAuthorize("hasRole('RECRUITER')")
+    @Operation(summary = "Get recruiter dashboard stats", description = "Returns aggregated statistics: active jobs, total applications, scheduled interviews")
+    @ApiResponse(responseCode = "200", description = "Dashboard statistics")
     public ResponseEntity<RecruiterStatsDTO> getRecruiterStats(Authentication authentication) {
         String email = authentication.getName();
         log.debug("Fetching stats for recruiter: {}", email);
         return ResponseEntity.ok(applicationService.getRecruiterStats(email));
     }
 
-    /**
-     * Recruiter updates application status.
-     * PATCH /applications/{applicationId}/status
-     */
     @PatchMapping("/api/applications/{applicationId}/status")
     @PreAuthorize("hasRole('RECRUITER')")
+    @Operation(summary = "Update application status", description = "Changes status (e.g., REVIEWED, REJECTED, OFFERED)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Status updated"),
+            @ApiResponse(responseCode = "404", description = "Application not found")
+    })
     public ResponseEntity<JobApplicationResponseDTO> updateApplicationStatus(
             Authentication authentication,
             @PathVariable Long applicationId,
@@ -156,12 +150,13 @@ public class ApplicationController {
         return ResponseEntity.ok(applicationService.updateApplicationStatus(applicationId, request.status(), email));
     }
 
-    /**
-     * Recruiter shortlists a candidate.
-     * PATCH /applications/{applicationId}/shortlist
-     */
     @PatchMapping("/api/applications/{applicationId}/shortlist")
     @PreAuthorize("hasRole('RECRUITER')")
+    @Operation(summary = "Shortlist a candidate", description = "Marks an application as SHORTLISTED for further review")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Application shortlisted"),
+            @ApiResponse(responseCode = "404", description = "Application not found")
+    })
     public ResponseEntity<JobApplicationResponseDTO> shortlistCandidate(
             Authentication authentication,
             @PathVariable Long applicationId) {
@@ -171,12 +166,14 @@ public class ApplicationController {
         return ResponseEntity.ok(applicationService.shortlistCandidate(applicationId, email));
     }
 
-    /**
-     * Recruiter schedules an interview for a shortlisted candidate.
-     * POST /applications/{applicationId}/schedule-interview
-     */
     @PostMapping("/api/applications/{applicationId}/schedule-interview")
     @PreAuthorize("hasRole('RECRUITER')")
+    @Operation(summary = "Schedule an interview", description = "Schedules an interview for a shortlisted candidate. Sends email notification with .ics calendar invite.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Interview scheduled"),
+            @ApiResponse(responseCode = "400", description = "Application not in SHORTLISTED status"),
+            @ApiResponse(responseCode = "404", description = "Application not found")
+    })
     public ResponseEntity<InterviewResponseDTO> scheduleInterview(
             Authentication authentication,
             @PathVariable Long applicationId,

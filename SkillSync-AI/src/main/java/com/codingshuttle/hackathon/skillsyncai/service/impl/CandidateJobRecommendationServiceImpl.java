@@ -130,11 +130,19 @@ public class CandidateJobRecommendationServiceImpl implements CandidateJobRecomm
             if (matchPercentage < (minScore != null ? minScore * 100 : 70.0))
                 continue;
 
-            recommendations.add(new RecommendedJobResponse(job.getId(), job.getTitle(), job.getCompanyName(),
-                    job.getLocation(), job.getRequiredExperienceYears(), matchPercentage, null,
-                    job.getJobType() != null ? job.getJobType().name() : null,
-                    job.getEmploymentType() != null ? job.getEmploymentType().name() : null, appStatus,
-                    job.getSkillsRequired()));
+            recommendations.add(new RecommendedJobResponse(
+                    job.getId(),
+                    job.getTitle(),
+                    job.getCompanyName(),
+                    job.getLocation(),
+                    job.getSkillsRequired(),
+                    job.getSalaryMin(),
+                    job.getSalaryMax(),
+                    job.getJobType(),
+                    job.getEmploymentType(),
+                    appStatus,
+                    matchPercentage,
+                    null));
         }
 
         recommendations.sort(Comparator.comparingDouble(RecommendedJobResponse::matchScore).reversed());
@@ -163,9 +171,19 @@ public class CandidateJobRecommendationServiceImpl implements CandidateJobRecomm
                 log.error("Failed to generate explanation for job {}", rec.jobId(), e);
                 explanation = "AI explanation unavailable at the moment.";
             }
-            finalRecommendations.add(new RecommendedJobResponse(rec.jobId(), rec.jobTitle(), rec.companyName(),
-                    rec.location(), rec.minExperience(), rec.matchScore(), explanation, rec.jobType(),
-                    rec.employmentType(), rec.applicationStatus(), rec.skills()));
+            finalRecommendations.add(new RecommendedJobResponse(
+                    rec.jobId(),
+                    rec.title(),
+                    rec.companyName(),
+                    rec.location(),
+                    rec.skillsRequired(),
+                    rec.salaryMin(),
+                    rec.salaryMax(),
+                    rec.jobType(),
+                    rec.employmentType(),
+                    rec.applicationStatus(),
+                    rec.matchScore(),
+                    explanation));
         }
         return finalRecommendations;
     }

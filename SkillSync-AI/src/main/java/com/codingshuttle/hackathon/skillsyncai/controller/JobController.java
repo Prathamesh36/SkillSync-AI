@@ -11,6 +11,11 @@ import com.codingshuttle.hackathon.skillsyncai.enums.JobType;
 import com.codingshuttle.hackathon.skillsyncai.repository.UserRepository;
 import com.codingshuttle.hackathon.skillsyncai.service.JobService;
 import com.codingshuttle.hackathon.skillsyncai.scheduler.JobScheduler;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +33,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/jobs")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Jobs", description = "Job posting, search, filtering, and management")
 public class JobController {
 
     private final JobService jobService;
@@ -38,6 +44,11 @@ public class JobController {
 
     @PostMapping
     @PreAuthorize("hasRole('RECRUITER')")
+    @Operation(summary = "Create a job posting", description = "Creates a new job. Recruiter profile must be 100% complete.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Job created"),
+            @ApiResponse(responseCode = "400", description = "Incomplete recruiter profile or validation error")
+    })
     public ResponseEntity<JobResponseDTO> createJob(
             Authentication authentication,
             @Valid @RequestBody JobCreateDTO dto) {
@@ -79,6 +90,11 @@ public class JobController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get job by ID", description = "Returns full details of a specific job posting")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Job found"),
+            @ApiResponse(responseCode = "404", description = "Job not found")
+    })
     public ResponseEntity<JobResponseDTO> getJob(@PathVariable Long id) {
         Job job = jobService.getJob(id);
         return ResponseEntity.ok(jobMapper.toDTO(job));
@@ -86,6 +102,8 @@ public class JobController {
 
     @GetMapping("/my")
     @PreAuthorize("hasRole('RECRUITER')")
+    @Operation(summary = "Get my jobs", description = "Lists all jobs posted by the authenticated recruiter")
+    @ApiResponse(responseCode = "200", description = "List of recruiter's jobs")
     public ResponseEntity<List<JobResponseDTO>> getMyJobs(Authentication authentication) {
         String email = authentication.getName();
         User recruiter = userRepository.findByEmail(email)
@@ -95,6 +113,8 @@ public class JobController {
     }
 
     @GetMapping
+    @Operation(summary = "List all jobs", description = "Returns all active job postings")
+    @ApiResponse(responseCode = "200", description = "List of jobs")
     public ResponseEntity<List<JobResponseDTO>> getAllJobs() {
         List<Job> jobs = jobService.getAllJobs();
         return ResponseEntity.ok(jobs.stream().map(jobMapper::toDTO).collect(Collectors.toList()));
@@ -102,6 +122,12 @@ public class JobController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('RECRUITER')")
+    @Operation(summary = "Update a job posting", description = "Updates job details. Only the job owner can update.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Job updated"),
+            @ApiResponse(responseCode = "403", description = "Not the job owner"),
+            @ApiResponse(responseCode = "404", description = "Job not found")
+    })
     public ResponseEntity<JobResponseDTO> updateJob(
             @PathVariable Long id,
             @Valid @RequestBody JobCreateDTO dto,
@@ -121,6 +147,12 @@ public class JobController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('RECRUITER')")
+    @Operation(summary = "Delete a job posting", description = "Permanently deletes a job. Only the owner can delete.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Job deleted"),
+            @ApiResponse(responseCode = "403", description = "Not the job owner"),
+            @ApiResponse(responseCode = "404", description = "Job not found")
+    })
     public ResponseEntity<Void> deleteJob(@PathVariable Long id, Authentication authentication) {
         Job existingJob = jobService.getJob(id);
 
@@ -133,12 +165,16 @@ public class JobController {
     }
 
     @GetMapping("/search")
+    @Operation(summary = "Search jobs", description = "Full-text search across job title, description, and skills. Public endpoint.")
+    @ApiResponse(responseCode = "200", description = "Search results")
     public ResponseEntity<List<JobResponseDTO>> searchJobs(@RequestParam String query) {
         List<Job> jobs = jobService.searchJobs(query);
         return ResponseEntity.ok(jobs.stream().map(jobMapper::toDTO).collect(Collectors.toList()));
     }
 
     @GetMapping("/filter")
+    @Operation(summary = "Filter jobs", description = "Filter jobs by type, employment type, location, salary range, and skills")
+    @ApiResponse(responseCode = "200", description = "Filtered results")
     public ResponseEntity<List<JobResponseDTO>> filterJobs(
             @RequestParam(required = false) JobType jobType,
             @RequestParam(required = false) EmploymentType employmentType,
@@ -153,6 +189,11 @@ public class JobController {
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('RECRUITER')")
+    @Operation(summary = "Toggle job status", description = "Activate or deactivate a job posting. Owner only.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Status updated"),
+            @ApiResponse(responseCode = "403", description = "Not the job owner")
+    })
     public ResponseEntity<JobResponseDTO> toggleJobStatus(
             @PathVariable Long id,
             @RequestParam boolean active,
@@ -170,6 +211,7 @@ public class JobController {
         return ResponseEntity.ok(jobMapper.toDTO(updated));
     }
 
+    @Hidden
     @PostMapping("/scheduler/trigger-expiry")
     public ResponseEntity<String> triggerJobExpiry() {
         try {

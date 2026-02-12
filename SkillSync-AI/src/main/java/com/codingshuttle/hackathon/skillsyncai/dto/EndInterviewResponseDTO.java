@@ -1,9 +1,11 @@
 package com.codingshuttle.hackathon.skillsyncai.dto;
 
-/**
- * Response DTO for ending a mock interview.
- */
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Final mock interview results")
 public record EndInterviewResponseDTO(
-        double finalScore,
-        String finalFeedback) {
+                @Schema(description = "Overall score (0-10)") double finalScore,
+                @Schema(description = "AI-generated comprehensive feedback") String feedback,
+                @Schema(description = "Total questions answered") int questionsAnswered,
+                @Schema(description = "Session status") String status) {
 }

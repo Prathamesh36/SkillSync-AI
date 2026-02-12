@@ -1,14 +1,15 @@
 package com.codingshuttle.hackathon.skillsyncai.dto;
 
-import com.codingshuttle.hackathon.skillsyncai.enums.ApplicationStatus;
+import io.swagger.v3.oas.annotations.media.Schema;
 
-/**
- * Simple response DTO for invitation acceptance result.
- */
+@Schema(description = "Response after accepting a job invitation")
 public record InvitationAcceptResponseDTO(
-        Long applicationId,
-        Long jobId,
-        String jobTitle,
-        ApplicationStatus status,
-        String message) {
+                @Schema(description = "Invitation ID") Long invitationId,
+                @Schema(description = "Invitation status (ACCEPTED)") String status,
+                @Schema(description = "Job ID") Long jobId,
+                @Schema(description = "Job title") String jobTitle,
+                @Schema(description = "Company name") String companyName,
+                @Schema(description = "Auto-created application ID") Long applicationId,
+                @Schema(description = "Application status") String applicationStatus,
+                @Schema(description = "Confirmation message") String message) {
 }

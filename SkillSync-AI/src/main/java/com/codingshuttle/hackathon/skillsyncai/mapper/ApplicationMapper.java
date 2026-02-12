@@ -18,15 +18,15 @@ public class ApplicationMapper {
                 application.getJob().getCompanyName(),
                 application.getCandidate().getId(),
                 application.getCandidate().getUser().getName(),
+                application.getCandidate().getUser().getEmail(),
                 application.getResume().getId(),
                 application.getStatus(),
-                application.getMatchScoreSnapshot(),
+                application.getAiAnalysis(),
+                application.getMatchScoreSnapshot() != null
+                        ? (int) Math.round(application.getMatchScoreSnapshot() * 100)
+                        : 0,
                 application.getAppliedAt(),
-                application.getCandidate().getUser().getEmail(),
-                application.getCandidate().getHeadline(),
-                application.getCandidate().getSkills(),
-                application.getCandidate().getLocation(),
-                application.getCandidate().getExperienceYears(),
-                application.getAiAnalysis());
+                null, // updatedAt not available in entity yet
+                application.getJob().getPostedBy().getId());
     }
 }

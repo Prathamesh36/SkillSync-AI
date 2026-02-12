@@ -1,19 +1,24 @@
 package com.codingshuttle.hackathon.skillsyncai.dto;
 
-import com.codingshuttle.hackathon.skillsyncai.enums.ApplicationStatus;
+import com.codingshuttle.hackathon.skillsyncai.enums.EmploymentType;
+import com.codingshuttle.hackathon.skillsyncai.enums.JobType;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.math.BigDecimal;
+import java.util.List;
 
+@Schema(description = "AI-recommended job for a candidate")
 public record RecommendedJobResponse(
-        Long jobId,
-        String jobTitle,
-        String companyName,
-        String location,
-        Integer minExperience,
-        Double matchScore,
-        String shortAiExplanation,
-        String jobType, // REMOTE, ONSITE, HYBRID
-        String employmentType, // FULL_TIME, PART_TIME etc
-        String applicationStatus, // "APPLY_NOW", "APPLIED", "INVITED"
-        java.util.List<String> skills) {
+        @Schema(description = "Job ID") Long jobId,
+        @Schema(description = "Job title") String title,
+        @Schema(description = "Company name") String companyName,
+        @Schema(description = "Job location") String location,
+        @Schema(description = "Required skills") List<String> skillsRequired,
+        @Schema(description = "Minimum salary") BigDecimal salaryMin,
+        @Schema(description = "Maximum salary") BigDecimal salaryMax,
+        @Schema(description = "Work arrangement") JobType jobType,
+        @Schema(description = "Employment type") EmploymentType employmentType,
+        @Schema(description = "Application status (APPLY_NOW, APPLIED, INVITED)") String applicationStatus,
+        @Schema(description = "AI match score (0.0 - 1.0)") Double matchScore,
+        @Schema(description = "Short AI explanation of match") String explanation) {
 }

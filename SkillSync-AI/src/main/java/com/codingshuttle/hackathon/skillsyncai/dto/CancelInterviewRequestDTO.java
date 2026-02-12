@@ -1,10 +1,9 @@
 package com.codingshuttle.hackathon.skillsyncai.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
-/**
- * Request DTO for cancelling an interview.
- */
+@Schema(description = "Request to cancel a scheduled interview")
 public record CancelInterviewRequestDTO(
-        @NotBlank(message = "Cancellation reason is required") String reason) {
+                @NotBlank @Schema(description = "Reason for cancellation", example = "Position has been filled") String reason) {
 }

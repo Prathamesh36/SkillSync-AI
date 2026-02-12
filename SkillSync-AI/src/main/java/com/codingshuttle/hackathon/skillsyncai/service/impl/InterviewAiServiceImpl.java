@@ -108,14 +108,15 @@ public class InterviewAiServiceImpl implements InterviewAiService {
             JsonNode root = objectMapper.readTree(cleaned);
             int score = root.has("score") ? root.get("score").asInt() : 5;
             List<String> sList = new ArrayList<>();
+            List<String> wList = new ArrayList<>();
             if (root.has("strengths"))
                 root.get("strengths").forEach(n -> sList.add(n.asText()));
-            List<String> wList = new ArrayList<>();
             if (root.has("weaknesses"))
                 root.get("weaknesses").forEach(n -> wList.add(n.asText()));
-            return new EvaluationDTO(score, sList, wList);
+            return new EvaluationDTO(score, sList, wList, "Detailed feedback available above.");
         } catch (Exception e) {
-            return new EvaluationDTO(5, List.of("Answer received"), List.of("Parsing error"));
+            return new EvaluationDTO(5, List.of("Answer received"), List.of("Parsing error"),
+                    "Error parsing AI response.");
         }
     }
 }

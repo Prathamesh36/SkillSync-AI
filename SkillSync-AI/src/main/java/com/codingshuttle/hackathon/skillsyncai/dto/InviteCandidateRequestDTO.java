@@ -1,13 +1,10 @@
 package com.codingshuttle.hackathon.skillsyncai.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 
-/**
- * Request DTO for inviting a candidate to apply for a job.
- */
+@Schema(description = "Request to invite a candidate to a job")
 public record InviteCandidateRequestDTO(
-        @NotNull(message = "Candidate ID is required") Long candidateId,
-
-        @Size(max = 1000, message = "Message must not exceed 1000 characters") String message) {
+                @NotNull @Schema(description = "ID of the candidate to invite", example = "42") Long candidateId,
+                @Schema(description = "Personalized invitation message", example = "We were impressed by your profile and would love to discuss this opportunity!") String message) {
 }

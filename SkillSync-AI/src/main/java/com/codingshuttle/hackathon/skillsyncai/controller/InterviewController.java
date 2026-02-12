@@ -2,6 +2,10 @@ package com.codingshuttle.hackathon.skillsyncai.controller;
 
 import com.codingshuttle.hackathon.skillsyncai.dto.*;
 import com.codingshuttle.hackathon.skillsyncai.service.InterviewSessionService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,16 +26,18 @@ import java.util.UUID;
 @RequestMapping("/api/interviews/mock")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "AI Mock Interviews", description = "AI-powered mock interview sessions — resume-based and topic-based")
 public class InterviewController {
 
     private final InterviewSessionService interviewService;
 
-    /**
-     * Start a new mock interview session.
-     * POST /api/interviews/mock/start
-     */
     @PostMapping("/start")
     @PreAuthorize("hasRole('CANDIDATE')")
+    @Operation(summary = "Start resume-based interview", description = "Starts a mock interview session where AI generates questions tailored to the candidate's resume and skills")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Session started with first question"),
+            @ApiResponse(responseCode = "400", description = "No resume uploaded")
+    })
     public ResponseEntity<StartInterviewResponseDTO> startInterview(Authentication authentication) {
         String email = authentication.getName();
         log.info("Starting mock interview for: {}", email);
@@ -40,12 +46,14 @@ public class InterviewController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    /**
-     * Submit an answer to the current question.
-     * POST /api/interviews/mock/{sessionId}/answer
-     */
     @PostMapping("/{sessionId}/answer")
     @PreAuthorize("hasRole('CANDIDATE')")
+    @Operation(summary = "Submit an answer", description = "Submits the candidate's answer for evaluation. AI returns score (0-10), strengths, weaknesses, and the next question.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Answer evaluated"),
+            @ApiResponse(responseCode = "400", description = "Session already ended"),
+            @ApiResponse(responseCode = "404", description = "Session not found")
+    })
     public ResponseEntity<SubmitAnswerResponseDTO> submitAnswer(
             Authentication authentication,
             @PathVariable UUID sessionId,
@@ -58,12 +66,13 @@ public class InterviewController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * End the interview and get final feedback.
-     * POST /api/interviews/mock/{sessionId}/end
-     */
     @PostMapping("/{sessionId}/end")
     @PreAuthorize("hasRole('CANDIDATE')")
+    @Operation(summary = "End interview session", description = "Ends the session early and triggers AI-generated final feedback with overall score")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Final feedback returned"),
+            @ApiResponse(responseCode = "404", description = "Session not found")
+    })
     public ResponseEntity<EndInterviewResponseDTO> endInterview(
             Authentication authentication,
             @PathVariable UUID sessionId) {
@@ -75,12 +84,13 @@ public class InterviewController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Get the full interview transcript.
-     * GET /api/interviews/mock/{sessionId}/transcript
-     */
     @GetMapping("/{sessionId}/transcript")
     @PreAuthorize("hasRole('CANDIDATE')")
+    @Operation(summary = "Get interview transcript", description = "Returns the full Q&A transcript with per-question evaluations for a completed session")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Transcript returned"),
+            @ApiResponse(responseCode = "404", description = "Session not found")
+    })
     public ResponseEntity<InterviewTranscriptResponseDTO> getTranscript(
             Authentication authentication,
             @PathVariable UUID sessionId) {
@@ -92,12 +102,13 @@ public class InterviewController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Start a new topic-based mock interview session.
-     * POST /api/interviews/mock/topic/start
-     */
     @PostMapping("/topic/start")
     @PreAuthorize("hasRole('CANDIDATE')")
+    @Operation(summary = "Start topic-based interview", description = "Starts a mock interview with custom topics and difficulty level (EASY, MEDIUM, HARD)")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Session started with first question"),
+            @ApiResponse(responseCode = "400", description = "Invalid topics or difficulty")
+    })
     public ResponseEntity<StartInterviewResponseDTO> startTopicInterview(
             Authentication authentication,
             @Valid @RequestBody StartTopicInterviewRequestDTO request) {
@@ -111,12 +122,10 @@ public class InterviewController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    /**
-     * Get history of past completed interviews for the candidate.
-     * GET /api/interviews/mock/history
-     */
     @GetMapping("/history")
     @PreAuthorize("hasRole('CANDIDATE')")
+    @Operation(summary = "Get interview history", description = "Lists all past completed mock interview sessions with scores and metadata")
+    @ApiResponse(responseCode = "200", description = "Interview history")
     public ResponseEntity<List<InterviewHistoryDTO>> getInterviewHistory(Authentication authentication) {
         String email = authentication.getName();
         log.info("Fetching interview history for: {}", email);

@@ -40,12 +40,12 @@ public class JobMapper {
                 job.getCurrency(),
                 job.getJobType(),
                 job.getEmploymentType(),
+                job.getPostedBy() != null ? job.getPostedBy().getId() : null,
                 job.getRequiredExperienceYears(),
                 job.getSkillsRequired(),
-                job.getPostedBy() != null ? job.getPostedBy().getId() : null,
+                job.getApplicationDeadline(),
                 job.isActive(),
                 job.getCreatedAt(),
-                job.getApplicationDeadline(),
                 job.getJobReferenceId());
         return dto;
     }

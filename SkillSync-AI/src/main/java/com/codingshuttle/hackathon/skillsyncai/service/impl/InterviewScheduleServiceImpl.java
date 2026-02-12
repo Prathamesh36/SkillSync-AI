@@ -62,7 +62,7 @@ public class InterviewScheduleServiceImpl implements InterviewScheduleService {
         schedule.setCandidate(application.getCandidate());
         schedule.setInterviewDateTime(request.interviewDateTime());
         schedule.setDurationMinutes(request.durationMinutes());
-        schedule.setMode(request.mode());
+        schedule.setMode(request.interviewMode());
         schedule.setMeetingLink(request.meetingLink());
         schedule.setStatus(InterviewScheduleStatus.SCHEDULED);
         schedule.setLastUpdatedBy(LastUpdatedBy.RECRUITER);
@@ -154,9 +154,19 @@ public class InterviewScheduleServiceImpl implements InterviewScheduleService {
     }
 
     private InterviewResponseDTO toDTO(InterviewSchedule s) {
-        return new InterviewResponseDTO(s.getId(), s.getJobApplication().getId(),
-                s.getJobApplication().getJob().getTitle(), s.getJobApplication().getJob().getCompanyName(),
-                s.getCandidate().getUser().getName(), s.getRecruiter().getUser().getName(), s.getInterviewDateTime(),
-                s.getDurationMinutes(), s.getMode(), s.getMeetingLink(), s.getStatus());
+        return new InterviewResponseDTO(s.getId(),
+                s.getJobApplication().getId(),
+                s.getJobApplication().getJob().getId(),
+                s.getJobApplication().getJob().getTitle(),
+                s.getJobApplication().getJob().getCompanyName(),
+                s.getCandidate().getUser().getName(),
+                s.getCandidate().getUser().getEmail(),
+                s.getRecruiter().getUser().getName(),
+                s.getRecruiter().getUser().getEmail(),
+                s.getInterviewDateTime(),
+                s.getDurationMinutes(),
+                s.getMode(),
+                s.getMeetingLink(),
+                s.getStatus());
     }
 }

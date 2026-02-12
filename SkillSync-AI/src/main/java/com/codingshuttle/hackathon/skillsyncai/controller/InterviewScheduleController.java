@@ -4,6 +4,10 @@ import com.codingshuttle.hackathon.skillsyncai.dto.CancelInterviewRequestDTO;
 import com.codingshuttle.hackathon.skillsyncai.dto.InterviewResponseDTO;
 import com.codingshuttle.hackathon.skillsyncai.dto.RescheduleInterviewRequestDTO;
 import com.codingshuttle.hackathon.skillsyncai.service.InterviewScheduleService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,62 +27,56 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/interviews")
 @RequiredArgsConstructor
 @Slf4j
+@Tag(name = "Interview Scheduling", description = "Reschedule and cancel scheduled interviews")
 public class InterviewScheduleController {
 
-    private final InterviewScheduleService interviewScheduleService;
+        private final InterviewScheduleService interviewScheduleService;
 
-    /**
-     * Reschedule an existing interview.
-     * 
-     * Only recruiter who owns the job can reschedule.
-     * Interview must be in SCHEDULED status.
-     * 
-     * @param interviewId ID of the interview to reschedule
-     * @param request     new scheduling details
-     * @return updated interview details
-     */
-    @PatchMapping("/{interviewId}/reschedule")
-    @PreAuthorize("hasRole('RECRUITER')")
-    public ResponseEntity<InterviewResponseDTO> rescheduleInterview(
-            Authentication authentication,
-            @PathVariable Long interviewId,
-            @Valid @RequestBody RescheduleInterviewRequestDTO request) {
+        @PatchMapping("/{interviewId}/reschedule")
+        @PreAuthorize("hasRole('RECRUITER')")
+        @Operation(summary = "Reschedule an interview", description = "Changes date/time and optionally meeting link. Sends updated email notification. Interview must be in SCHEDULED status.")
+        @ApiResponses({
+                        @ApiResponse(responseCode = "200", description = "Interview rescheduled"),
+                        @ApiResponse(responseCode = "400", description = "Interview not in SCHEDULED status"),
+                        @ApiResponse(responseCode = "403", description = "Not the job owner"),
+                        @ApiResponse(responseCode = "404", description = "Interview not found")
+        })
+        public ResponseEntity<InterviewResponseDTO> rescheduleInterview(
+                        Authentication authentication,
+                        @PathVariable Long interviewId,
+                        @Valid @RequestBody RescheduleInterviewRequestDTO request) {
 
-        String recruiterEmail = authentication.getName();
-        log.info("Reschedule request: interviewId={}, recruiter={}, newDateTime={}",
-                interviewId, recruiterEmail, request.newInterviewDateTime());
+                String recruiterEmail = authentication.getName();
+                log.info("Reschedule request: interviewId={}, recruiter={}, newDateTime={}",
+                                interviewId, recruiterEmail, request.newInterviewDateTime());
 
-        InterviewResponseDTO response = interviewScheduleService.rescheduleInterview(
-                interviewId, request, recruiterEmail);
+                InterviewResponseDTO response = interviewScheduleService.rescheduleInterview(
+                                interviewId, request, recruiterEmail);
 
-        return ResponseEntity.ok(response);
-    }
+                return ResponseEntity.ok(response);
+        }
 
-    /**
-     * Cancel an existing interview.
-     * 
-     * Only recruiter who owns the job can cancel.
-     * Interview must be in SCHEDULED status.
-     * Reverts JobApplication status to SHORTLISTED.
-     * 
-     * @param interviewId ID of the interview to cancel
-     * @param request     contains cancellation reason
-     * @return updated interview details with CANCELLED status
-     */
-    @PatchMapping("/{interviewId}/cancel")
-    @PreAuthorize("hasRole('RECRUITER')")
-    public ResponseEntity<InterviewResponseDTO> cancelInterview(
-            Authentication authentication,
-            @PathVariable Long interviewId,
-            @Valid @RequestBody CancelInterviewRequestDTO request) {
+        @PatchMapping("/{interviewId}/cancel")
+        @PreAuthorize("hasRole('RECRUITER')")
+        @Operation(summary = "Cancel an interview", description = "Cancels a scheduled interview with a reason. Reverts the application status to SHORTLISTED.")
+        @ApiResponses({
+                        @ApiResponse(responseCode = "200", description = "Interview cancelled"),
+                        @ApiResponse(responseCode = "400", description = "Interview not in SCHEDULED status"),
+                        @ApiResponse(responseCode = "403", description = "Not the job owner"),
+                        @ApiResponse(responseCode = "404", description = "Interview not found")
+        })
+        public ResponseEntity<InterviewResponseDTO> cancelInterview(
+                        Authentication authentication,
+                        @PathVariable Long interviewId,
+                        @Valid @RequestBody CancelInterviewRequestDTO request) {
 
-        String recruiterEmail = authentication.getName();
-        log.info("Cancel request: interviewId={}, recruiter={}, reason={}",
-                interviewId, recruiterEmail, request.reason());
+                String recruiterEmail = authentication.getName();
+                log.info("Cancel request: interviewId={}, recruiter={}, reason={}",
+                                interviewId, recruiterEmail, request.reason());
 
-        InterviewResponseDTO response = interviewScheduleService.cancelInterview(
-                interviewId, request, recruiterEmail);
+                InterviewResponseDTO response = interviewScheduleService.cancelInterview(
+                                interviewId, request, recruiterEmail);
 
-        return ResponseEntity.ok(response);
-    }
+                return ResponseEntity.ok(response);
+        }
 }
