@@ -19,6 +19,29 @@ SkillSync AI reimagines the hiring pipeline with AI at every stage:
 - **Interview Scheduling** — Recruiters schedule, reschedule, or cancel interviews with automatic email notifications and `.ics` calendar invites.
 
 ---
+
+## 📑 Table of Contents
+
+- [📌 Problem Statement](#-problem-statement)
+- [💡 Solution Overview](#-solution-overview)
+- [🛠️ Tech Stack](#️-tech-stack)
+- [✨ Key Features](#-key-features)
+- [🗂️ Entity Relationship (ER) Diagram](#️-entity-relationship-er-diagram)
+- [🔄 System Flow](#-system-flow)
+- [🏗️ System Architecture](#️-system-architecture)
+- [🚢 Deployment Architecture](#-deployment-architecture)
+- [🧠 AI Architecture](#-ai-architecture)
+- [📡 API Documentation](#-api-documentation)
+- [🖥️ Local Setup Instructions](#️-local-setup-instructions)
+- [🐳 Docker Setup (Full Stack)](#-docker-setup-full-stack)
+- [🔐 Environment Variables](#-environment-variables)
+- [🔒 Security Implementation](#-security-implementation)
+- [🛡️ AI Resilience Strategy](#️-ai-resilience-strategy)
+- [🔮 Future Enhancements](#-future-enhancements)
+- [🎬 Demo Video](#-demo-video)
+- [👨‍💻 Author & Credits](#-author--credits)
+
+---
 ## 🛠️ Tech Stack
 
 ### Backend
@@ -86,152 +109,170 @@ SkillSync AI reimagines the hiring pipeline with AI at every stage:
 
 ## 🗂️ Entity Relationship (ER) Diagram
 
+# SkillSync AI Database Schema
+
+Below is the complete Entity Relationship Diagram for the platform.
+
 ```mermaid
-%% Paste your full ER diagram code below this line
-
 erDiagram
-    USER ||--o{ CANDIDATE : has
-    USER ||--o{ RECRUITER : has
-    USER ||--o{ RESUME : owns
-    USER ||--o{ APPLICATION : submits
-    USER ||--o{ JOB_INVITATION : receives
-    USER ||--o{ INTERVIEW : participates
-    USER ||--o{ MATCH_RESULT : generates
-    
-    CANDIDATE ||--o{ RESUME : owns
-    CANDIDATE ||--o{ APPLICATION : submits
-    CANDIDATE ||--o{ JOB_INVITATION : receives
-    CANDIDATE ||--o{ INTERVIEW : participates
-    CANDIDATE ||--o{ MATCH_RESULT : generates
-    
-    RECRUITER ||--o{ JOB : posts
-    RECRUITER ||--o{ INTERVIEW : schedules
-    RECRUITER ||--o{ JOB_INVITATION : sends
-    
-    JOB ||--o{ APPLICATION : receives
-    JOB ||--o{ JOB_INVITATION : sends
-    JOB ||--o{ INTERVIEW : has
-    JOB ||--o{ MATCH_RESULT : generates
-    
-    RESUME ||--o{ MATCH_RESULT : used_in
-    
-    USER {
-        Long id PK
-        String email UK
-        String password
-        String role
-        String fullName
-        String phoneNumber
-        String bio
-        Boolean isActive
-        LocalDateTime createdAt
-        LocalDateTime updatedAt
-    }
-    
-    CANDIDATE {
-        Long id PK
-        Long userId UK
-        String headline
-        String location
-        Integer experienceYears
-        List<String> skills
-        String resumeUrl
-        String resumeText
-        String resumeVector
-        LocalDateTime createdAt
-        LocalDateTime updatedAt
-    }
-    
-    RECRUITER {
-        Long id PK
-        Long userId UK
-        String companyName
-        String companyLogoUrl
-        String department
-        String designation
-        LocalDateTime createdAt
-        LocalDateTime updatedAt
-    }
-    
-    JOB {
-        Long id PK
-        Long recruiterId
-        String title
-        String description
-        String location
-        BigDecimal salaryMin
-        BigDecimal salaryMax
-        Integer requiredExperienceYears
-        List<String> skillsRequired
-        String jobType
-        String employmentType
-        Boolean isActive
-        LocalDateTime createdAt
-        LocalDateTime updatedAt
-    }
-    
-    RESUME {
-        Long id PK
-        Long userId
-        String fileName
-        String fileUrl
-        String parsedContent
-        List<String> extractedSkills
-        String embeddingVector
-        LocalDateTime uploadedAt
-    }
-    
-    APPLICATION {
-        Long id PK
-        Long jobId
-        Long candidateId
-        String status
-        String coverLetter
-        LocalDateTime appliedAt
-        LocalDateTime updatedAt
-    }
-    
-    JOB_INVITATION {
-        Long id PK
-        Long jobId
-        Long candidateId
-        String invitationToken
-        String status
-        LocalDateTime sentAt
-        LocalDateTime expiresAt
-        LocalDateTime acceptedAt
-    }
-    
-    INTERVIEW {
-        Long id PK
-        Long jobId
-        Long candidateId
-        Long recruiterId
-        LocalDateTime interviewDateTime
-        String interviewType
-        String status
-        String location
-        String meetingLink
-        LocalDateTime createdAt
-        LocalDateTime updatedAt
-    }
-    
-    MATCH_RESULT {
-        Long id PK
-        Long jobId
-        Long candidateId
-        Double semanticScore
-        Double skillScore
-        Double experienceScore
-        Double locationScore
-        Double finalScore
-        String explanation
-        LocalDateTime createdAt
+    User {
+        BIGINT id PK
+        VARCHAR email UK
+        VARCHAR password
+        VARCHAR name
+        VARCHAR role
+        TEXT bio
+        VARCHAR linked_in_url
+        VARCHAR portfolio_url
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
     }
 
+    Candidate {
+        BIGINT id PK
+        BIGINT user_id FK
+        INTEGER experience_years
+        VARCHAR headline
+        VARCHAR location
+        LIST skills "ElementCollection"
+    }
 
+    Recruiter {
+        BIGINT id PK
+        BIGINT user_id FK
+        VARCHAR company_name
+        VARCHAR designation
+        VARCHAR company_website
+    }
 
+    Resume {
+        BIGINT id PK
+        BIGINT user_id FK
+        VARCHAR file_name
+        VARCHAR file_type
+        VARCHAR s3_url
+        TEXT parsed_content
+        LIST extracted_skills "ElementCollection"
+        TIMESTAMP uploaded_at
+    }
+
+    Job {
+        BIGINT id PK
+        VARCHAR title
+        TEXT description
+        VARCHAR company_name
+        VARCHAR location
+        DECIMAL salary_min
+        DECIMAL salary_max
+        VARCHAR currency
+        VARCHAR job_type
+        VARCHAR employment_type
+        INTEGER required_experience_years
+        LIST skills_required "ElementCollection"
+        BIGINT posted_by FK
+        BOOLEAN active
+        DATE application_deadline
+        VARCHAR job_reference_id UK
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    Application {
+        BIGINT id PK
+        BIGINT job_id FK
+        BIGINT candidate_id FK
+        BIGINT resume_id FK
+        VARCHAR status
+        DOUBLE match_score_snapshot
+        TEXT ai_analysis
+        TIMESTAMP applied_at
+    }
+
+    InterviewSchedule {
+        BIGINT id PK
+        BIGINT application_id FK
+        BIGINT recruiter_id FK
+        BIGINT candidate_id FK
+        TIMESTAMP interview_date_time
+        INTEGER duration_minutes
+        VARCHAR mode
+        VARCHAR meeting_link
+        VARCHAR status
+        TIMESTAMP created_at
+        TIMESTAMP previous_interview_date_time
+        TIMESTAMP rescheduled_at
+        TIMESTAMP cancelled_at
+        VARCHAR cancellation_reason
+        VARCHAR last_updated_by
+    }
+
+    InterviewSession {
+        VARCHAR id PK  "UUID"
+        BIGINT candidate_id FK
+        VARCHAR status
+        INTEGER question_count
+        TIMESTAMP started_at
+        TIMESTAMP ended_at
+        DOUBLE final_score
+        TEXT final_feedback
+        TEXT resume_summary
+        VARCHAR interview_mode
+        TEXT topics_json
+        VARCHAR difficulty_level
+    }
+
+    InterviewTranscript {
+        BIGINT id PK
+        VARCHAR session_id FK
+        TEXT messages_json
+        TEXT evaluations_json
+    }
+
+    JobInvitation {
+        BIGINT id PK
+        BIGINT job_id FK
+        BIGINT candidate_id FK
+        BIGINT invited_by_id FK
+        VARCHAR status
+        TIMESTAMP invited_at
+        TIMESTAMP responded_at
+        VARCHAR message
+        VARCHAR invitation_token UK
+        TIMESTAMP expires_at
+    }
+
+    MatchResult {
+        BIGINT id PK
+        BIGINT job_id
+        BIGINT candidate_id
+        DOUBLE match_score
+        TEXT candidate_explanation
+        TEXT recruiter_explanation
+        TIMESTAMP created_at
+    }
+
+    %% Relationships
+    Candidate ||--|| User : "user"
+    Recruiter ||--|| User : "user"
+    Resume    ||--|| User : "user"
+
+    Job      ||--o{ Application : "has"
+    Candidate ||--o{ Application : "submits"
+    Resume    ||--o{ Application : "used in"
+
+    Application ||--|| InterviewSchedule : "schedules"
+    Recruiter   ||--o{ InterviewSchedule : "conducts"
+    Candidate   ||--o{ InterviewSchedule : "attends"
+
+    Candidate   ||--o{ InterviewSession : "initiates"
+    InterviewSession ||--|| InterviewTranscript : "has"
+
+    User       ||--o{ Job : "posts"
+    Job        ||--o{ JobInvitation : "invites"
+    Candidate  ||--o{ JobInvitation : "receives"
+    Recruiter  ||--o{ JobInvitation : "sends"
 ```
+
 ---
 
 ## 🏗️ System Architecture
@@ -277,7 +318,112 @@ erDiagram
 
 ---
 
-## 🚢 Deployment Architecture
+## � System Flow
+
+### 1. High-Level System Flow
+```ascii
+[React Frontend]
+      |
+      | REST API (JSON)
+      v
+[Spring Boot Backend]
+      |
+      +---> [AuthController] -> [AuthService] -> [PostgreSQL (Users/Roles)]
+      |
+      +---> [ResumeController] -> [AIService] 
+      |           |
+      |           +---> [OpenAI / Ollama] (LLM Parsing)
+      |           +---> [Local Storage] (File Uploads)
+      |           +---> [PGVector] (Embeddings)
+      |
+      +---> [JobController] -> [JobService] -> [PostgreSQL (Jobs)]
+      |
+      +---> [RecommendationController] -> [VectorSearchService] 
+      |           |
+      |           +---> [PGVector] (Similarity Search)
+      |           +---> [ChatClient] (AI Explanation)
+      |
+      +---> [InterviewScheduleController] 
+                  |
+                  v
+          [InterviewScheduleService] --(Event)--> [InterviewEventListener]
+                                                         |
+                                                         v
+                                                [NotificationService]
+                                                         |
+                                                         v
+                                                [JavaMailSender] -> [Email + ICS]
+```
+
+### 2. Backend Request Flow (Resume Upload)
+```mermaid
+sequenceDiagram
+    participant User as Frontend
+    participant Controller as ResumeController
+    participant Service as AIService
+    participant LLM as OpenAI/Ollama
+    participant DB as PostgreSQL
+    participant FS as FileSystem
+
+    User->>Controller: POST /upload (File)
+    Controller->>FS: Save File
+    Controller->>Service: parseResume(File)
+    Service->>Service: Tika Extract Text
+    Service->>LLM: Prompt: "Extract structure JSON"
+    LLM-->>Service: JSON (Skills, Exp, etc.)
+    Service-->>Controller: ParsedResumeDTO
+    Controller->>DB: Update Candidate Profile
+    Controller->>Service: storeEmbedding(Text)
+    Service->>Service: Generate Embedding Vector
+    Service->>DB: INSERT into vector_store
+    Controller-->>User: 200 OK (Parsed Params)
+```
+
+### 3. AI Matching Flow
+```mermaid
+flowchart TD
+    A[Candidate Profile] --> B{Build Query}
+    B -->|Skills + Bio| C[Vector Search Service]
+    C -->|Query Embedding| D[("PGVector DB")]
+    D -->|Semantic Matches| E[Raw Candidates]
+    
+    E --> F[MatchScoreCalculator]
+    F -->|Calculate| G[Hybrid Score]
+    
+    G --> H{Top K Results}
+    H --> I["ChatClient (LLM)"]
+    I -->|Generate Explanation| J[Enriched Recommendation]
+    J --> K[Frontend Response]
+```
+
+### 4. Interview Scheduling & Notification
+```mermaid
+sequenceDiagram
+    participant Recruiter
+    participant Controller as InterviewScheduleController
+    participant Service as InterviewScheduleService
+    participant Event as EventPublisher
+    participant Listener as InterviewEventListener
+    participant Email as NotificationService
+
+    Recruiter->>Controller: Schedule Interview (Time, Mode)
+    Controller->>Service: createSchedule()
+    Service->>Service: Save to DB (Transactional)
+    Service->>Event: publish(InterviewScheduledEvent)
+    Service-->>Recruiter: 200 OK (Scheduled)
+    
+    par Async Notification
+        Event->>Listener: handleEvent()
+        Listener->>Email: sendInterviewScheduledNotification()
+        Email->>Email: Generate .ics File
+        Email->>Recruiter: Send Email + ICS
+        Email->>Candidate: Send Email + ICS
+    end
+```
+
+---
+
+## �🚢 Deployment Architecture
 
 ### Docker Compose (Full Stack)
 
