@@ -23,6 +23,9 @@
 - **Recruiters:** Post jobs, view matches, invite candidates, schedule interviews.
 - **Candidates:** Create profiles, upload resumes, view matches, apply to jobs, manage invitations.
 
+### 🗄️ Object Storage
+- **MinIO:** Secure and scalable S3-compatible storage for resumes and profile pictures.
+
 ---
 
 ## 🛠️ Tech Stack
@@ -31,6 +34,7 @@
 - **Database:** PostgreSQL (with `pgvector` extension)
 - **AI & ML:** Spring AI, Google Vertex AI (Gemini Models)
 - **Authentication:** JWT (JSON Web Tokens) with Spring Security
+- **Object Storage:** MinIO (S3 Compatible)
 - **Email:** JavaMailSender (SMTP)
 - **Build Tool:** Maven
 
@@ -42,7 +46,8 @@
 1.  **Java 17+** installed.
 2.  **PostgreSQL** installed with `pgvector` extension enabled.
 3.  **Google Cloud Project** with Vertex AI API enabled.
-4.  **SMTP Server** credentials (e.g., Gmail App Password).
+4.  **MinIO Server** running locally or in a container.
+5.  **SMTP Server** credentials (e.g., Gmail App Password).
 
 ### Installation
 
@@ -63,6 +68,7 @@
     - Update `src/main/resources/application.yml` with your credentials or set them as environment variables:
       - `SPRING_DATASOURCE_USERNAME` / `PASSWORD`
       - `GOOGLE_CLOUD_PROJECT_ID`
+      - `MINIO_URL` / `ACCESS_KEY` / `SECRET_KEY`
       - `MAIL_USERNAME` / `MAIL_PASSWORD`
 
 4.  **Run the Application:**
