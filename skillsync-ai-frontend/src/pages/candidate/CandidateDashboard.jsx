@@ -9,9 +9,41 @@ const CandidateDashboard = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [stats, setStats] = useState([
-        { label: 'Applications', value: '0', icon: '📝' },
-        { label: 'Invites', value: '0', icon: '📩' },
-        { label: 'Profile', value: '0%', icon: '👤' },
+        {
+            label: 'Applications',
+            value: '0',
+            icon: '📝',
+            bgIcon: (
+                <svg xmlns="http://www.w3.org/2000/svg" width="110" height="110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', right: '-15px', bottom: '-15px', opacity: 0.08, transform: 'rotate(-15deg)' }}>
+                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                </svg>
+            )
+        },
+        {
+            label: 'Invites',
+            value: '0',
+            icon: '📩',
+            bgIcon: (
+                <svg xmlns="http://www.w3.org/2000/svg" width="110" height="110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', right: '-15px', bottom: '-15px', opacity: 0.08, transform: 'rotate(-15deg)' }}>
+                    <rect width="20" height="16" x="2" y="4" rx="2" />
+                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                </svg>
+            )
+        },
+        {
+            label: 'Profile',
+            value: '0%',
+            icon: '👤',
+            bgIcon: (
+                <svg xmlns="http://www.w3.org/2000/svg" width="110" height="110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', right: '-15px', bottom: '-15px', opacity: 0.08, transform: 'rotate(-15deg)' }}>
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                </svg>
+            )
+        },
     ]);
     const [invitations, setInvitations] = useState([]);
     const [recommendations, setRecommendations] = useState([]);
@@ -53,9 +85,41 @@ const CandidateDashboard = () => {
                 const completion = Math.round((filled / fields.length) * 100);
 
                 setStats([
-                    { label: 'Applications', value: appCount.toString(), icon: '📝' },
-                    { label: 'Invites', value: inviteCount.toString(), icon: '📩' },
-                    { label: 'Profile', value: `${completion}%`, icon: '👤' },
+                    {
+                        label: 'Applications',
+                        value: appCount.toString(),
+                        icon: '📝',
+                        bgIcon: (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="110" height="110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', right: '-15px', bottom: '-15px', opacity: 0.08, transform: 'rotate(-15deg)' }}>
+                                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                            </svg>
+                        )
+                    },
+                    {
+                        label: 'Invites',
+                        value: inviteCount.toString(),
+                        icon: '📩',
+                        bgIcon: (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="110" height="110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', right: '-15px', bottom: '-15px', opacity: 0.08, transform: 'rotate(-15deg)' }}>
+                                <rect width="20" height="16" x="2" y="4" rx="2" />
+                                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                            </svg>
+                        )
+                    },
+                    {
+                        label: 'Profile',
+                        value: `${completion}%`,
+                        icon: '👤',
+                        bgIcon: (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="110" height="110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', right: '-15px', bottom: '-15px', opacity: 0.08, transform: 'rotate(-15deg)' }}>
+                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
+                            </svg>
+                        )
+                    },
                 ]);
 
             } catch (error) {
@@ -156,32 +220,41 @@ const CandidateDashboard = () => {
             <div className="dashboard-grid">
                 {stats.map((stat, index) => (
                     <div key={index} className="stat-card">
-                        <span style={{ fontSize: '1.5rem' }}>{stat.icon}</span>
-                        <span className="stat-value">{stat.value}</span>
-                        <span className="stat-label">{stat.label}</span>
+                        <span style={{ fontSize: '1.5rem', position: 'relative', zIndex: 1 }}>{stat.icon}</span>
+                        <span className="stat-value" style={{ position: 'relative', zIndex: 1 }}>{stat.value}</span>
+                        <span className="stat-label" style={{ position: 'relative', zIndex: 1 }}>{stat.label}</span>
+                        {stat.bgIcon}
                     </div>
                 ))}
 
                 {/* Promo Card for Mock Interview */}
-                <div className="stat-card" style={{ background: 'linear-gradient(135deg, #f5c842 0%, #fcd34d 100%)', color: '#1a1a1a' }}>
-                    <span style={{ fontSize: '1.5rem' }}>🎙️</span>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginTop: '0.5rem' }}>Mock Interview</h3>
-                    <p style={{ fontSize: '0.85rem', margin: '0.5rem 0 1rem', opacity: '0.9' }}>
-                        Practice your answers with our AI interviewer.
-                    </p>
-                    <Link to="/candidate/interviews" style={{
-                        background: 'rgba(255,255,255,0.9)',
-                        padding: '0.5rem 1rem',
-                        borderRadius: '20px',
-                        textDecoration: 'none',
-                        fontSize: '0.85rem',
-                        fontWeight: '600',
-                        color: '#1a1a1a',
-                        textAlign: 'center',
-                        width: 'fit-content'
-                    }}>
-                        Start Now
-                    </Link>
+                <div className="stat-card" style={{ background: 'linear-gradient(135deg, #f5c842 0%, #fcd34d 100%)', color: '#1a1a1a', position: 'relative', overflow: 'hidden' }}>
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                        <span style={{ fontSize: '1.5rem' }}>🎙️</span>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginTop: '0.5rem' }}>Mock Interview</h3>
+                        <p style={{ fontSize: '0.85rem', margin: '0.5rem 0 1rem', opacity: '0.9' }}>
+                            Practice your answers with our AI interviewer.
+                        </p>
+                        <Link to="/candidate/interviews" style={{
+                            display: 'block',
+                            background: 'rgba(255,255,255,0.9)',
+                            padding: '0.5rem 1rem',
+                            borderRadius: '20px',
+                            textDecoration: 'none',
+                            fontSize: '0.85rem',
+                            fontWeight: '600',
+                            color: '#1a1a1a',
+                            textAlign: 'center',
+                            width: 'fit-content'
+                        }}>
+                            Start Now
+                        </Link>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="110" height="110" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', right: '-15px', bottom: '-15px', opacity: 0.12, transform: 'rotate(-15deg)' }}>
+                        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                        <line x1="12" y1="19" x2="12" y2="22" />
+                    </svg>
                 </div>
             </div>
 
@@ -217,9 +290,14 @@ const CandidateDashboard = () => {
                                 }}>
                                     {Math.round(job.matchScore)}% Match
                                 </div>
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: '700', marginTop: '0.5rem', marginBottom: '0.25rem' }}>{job.jobTitle}</h3>
-                                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>{job.companyName}</p>
-                                <Link to={`/candidate/jobs?apply=${job.jobId}`} className="btn-primary" style={{ display: 'block', textAlign: 'center', fontSize: '0.85rem' }}>
+                                <h3 style={{ fontSize: '1.0rem', fontWeight: '700', marginTop: '0.5rem', marginBottom: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {job.title}
+                                </h3>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '0.25rem' }}>{job.companyName}</p>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '1rem' }}>
+                                    📍 {job.location}
+                                </p>
+                                <Link to="/candidate/recommendations" className="btn-primary" style={{ display: 'block', textAlign: 'center', fontSize: '0.8rem', padding: '0.5rem' }}>
                                     View & Apply
                                 </Link>
                             </div>

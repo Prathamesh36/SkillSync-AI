@@ -142,7 +142,10 @@ public class CandidateJobRecommendationServiceImpl implements CandidateJobRecomm
                     job.getEmploymentType(),
                     appStatus,
                     matchPercentage,
-                    null));
+                    null,
+                    job.getRequiredExperienceYears(),
+                    job.getCreatedAt(),
+                    job.getCurrency()));
         }
 
         recommendations.sort(Comparator.comparingDouble(RecommendedJobResponse::matchScore).reversed());
@@ -183,7 +186,10 @@ public class CandidateJobRecommendationServiceImpl implements CandidateJobRecomm
                     rec.employmentType(),
                     rec.applicationStatus(),
                     rec.matchScore(),
-                    explanation));
+                    explanation,
+                    rec.requiredExperienceYears(),
+                    rec.createdAt(),
+                    rec.currency()));
         }
         return finalRecommendations;
     }

@@ -20,7 +20,6 @@ const PostJob = () => {
         employmentType: 'FULL_TIME',
         requiredExperienceYears: '',
         skillsRequired: '', // Comma separated string
-        skillsRequired: '', // Comma separated string
         applicationDeadline: '',
         jobReferenceId: ''
     });
@@ -71,7 +70,6 @@ const PostJob = () => {
                 jobType: formData.jobType,
                 employmentType: formData.employmentType,
                 requiredExperienceYears: formData.requiredExperienceYears ? Number(formData.requiredExperienceYears) : null,
-                skillsRequired: skillsArray,
                 skillsRequired: skillsArray,
                 applicationDeadline: formData.applicationDeadline || null,
                 jobReferenceId: formData.jobReferenceId || null

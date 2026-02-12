@@ -5,6 +5,7 @@ import { userAPI, authAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../components/Toast';
+import ConfirmationModal from '../../components/ConfirmationModal';
 
 const CandidateProfile = () => {
     const { user, updateUser } = useAuth();
@@ -15,6 +16,7 @@ const CandidateProfile = () => {
     const [resumeUploading, setResumeUploading] = useState(false);
     const [resumeDeleting, setResumeDeleting] = useState(false);
     const [resumeSuccess, setResumeSuccess] = useState('');
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -96,6 +98,24 @@ const CandidateProfile = () => {
             toast.error("Failed to update profile.");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleDeleteResume = async () => {
+        setResumeDeleting(true);
+        try {
+            await userAPI.deleteResume();
+            const freshUser = await userAPI.getCurrentUser();
+            updateUser(freshUser);
+            setResumeSuccess('Resume deleted successfully.');
+            setTimeout(() => setResumeSuccess(''), 3000);
+        } catch (error) {
+            console.error("Delete failed", error);
+            const msg = error.response?.data?.message || "Failed to delete resume.";
+            toast.info(msg);
+        } finally {
+            setResumeDeleting(false);
+            setShowDeleteModal(false);
         }
     };
 
@@ -328,6 +348,7 @@ const CandidateProfile = () => {
                                     {(formData.experienceYears === '' || formData.experienceYears === null) && <li>Add Experience</li>}
                                     {!formData.linkedInUrl && <li>Add LinkedIn URL</li>}
                                     {!formData.skills && <li>Add Skills</li>}
+                                    {!user.candidateProfile?.resumeId && <li>Upload Resume</li>}
                                 </ul>
                             </div>
                         )}
@@ -356,23 +377,7 @@ const CandidateProfile = () => {
                                     ✅ Resume uploaded
                                 </div>
                                 <button
-                                    onClick={async () => {
-                                        if (!window.confirm("Are you sure you want to delete your resume? You will need to upload a new one.")) return;
-                                        setResumeDeleting(true);
-                                        try {
-                                            await userAPI.deleteResume();
-                                            const freshUser = await userAPI.getCurrentUser();
-                                            updateUser(freshUser);
-                                            setResumeSuccess('Resume deleted successfully.');
-                                            setTimeout(() => setResumeSuccess(''), 3000);
-                                        } catch (error) {
-                                            console.error("Delete failed", error);
-                                            const msg = error.response?.data?.message || "Failed to delete resume.";
-                                            toast.info(msg);
-                                        } finally {
-                                            setResumeDeleting(false);
-                                        }
-                                    }}
+                                    onClick={() => setShowDeleteModal(true)}
                                     disabled={resumeDeleting}
                                     style={{
                                         padding: '0.4rem 0.8rem',
@@ -458,6 +463,17 @@ const CandidateProfile = () => {
                     </div>
                 </div>
             </div>
+
+            <ConfirmationModal
+                show={showDeleteModal}
+                title="Delete Resume"
+                message="Are you sure you want to delete your resume? You will need to upload a new one to apply for jobs."
+                confirmText={resumeDeleting ? "Deleting..." : "Delete"}
+                cancelText="Cancel"
+                onConfirm={handleDeleteResume}
+                onCancel={() => setShowDeleteModal(false)}
+                type="danger"
+            />
         </DashboardLayout>
     );
 };

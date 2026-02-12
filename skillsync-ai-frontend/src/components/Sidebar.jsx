@@ -18,7 +18,7 @@ const Sidebar = () => {
     return (
         <aside className="dashboard-sidebar">
             <div className="sidebar-header">
-                <div className="sidebar-logo">SkillSync</div>
+                <div className="sidebar-logo">SkillSync AI</div>
             </div>
 
             <nav className="sidebar-nav">
@@ -64,7 +64,7 @@ const Sidebar = () => {
                     </div>
                 </div>
                 <NavLink to="/candidate/profile" className="btn-logout" style={{ marginTop: '0.5rem', marginBottom: '0.5rem', justifyContent: 'center', background: '#f3f4f6', color: 'var(--text-main)' }}>
-                    Edit Profile
+                    View Profile
                 </NavLink>
                 <button onClick={handleLogout} className="btn-logout" style={{ marginTop: '0.5rem' }}>
                     <span>↪</span> Sign Out

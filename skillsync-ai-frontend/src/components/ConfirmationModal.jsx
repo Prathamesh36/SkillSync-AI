@@ -12,10 +12,7 @@ const ConfirmationModal = ({
 }) => {
     if (!show) return null;
 
-    const getConfirmColor = () => {
-        if (type === 'danger') return 'var(--danger)';
-        return 'var(--primary)';
-    };
+
 
     return (
         <div style={{
@@ -82,10 +79,10 @@ const ConfirmationModal = ({
                     </button>
                     <button
                         onClick={onConfirm}
-                        className="btn-primary"
+                        className={type === 'danger' ? "btn-danger" : "btn-primary"}
                         style={{
-                            background: getConfirmColor(),
-                            borderColor: getConfirmColor()
+                            width: 'auto', // Override the 100% width from CSS for modal buttons
+                            minWidth: '100px'
                         }}
                     >
                         {confirmText}

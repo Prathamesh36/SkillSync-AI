@@ -17,7 +17,7 @@ const RecruiterSidebar = () => {
     return (
         <aside className="dashboard-sidebar">
             <div className="sidebar-header">
-                <div className="sidebar-logo">SkillSync <span style={{ fontSize: '0.8rem', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px', marginLeft: '5px' }}>Recruiter</span></div>
+                <div className="sidebar-logo">SkillSync AI <span style={{ fontSize: '0.8rem', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px', marginLeft: '5px' }}>Recruiter</span></div>
             </div>
 
             <nav className="sidebar-nav">
@@ -58,7 +58,7 @@ const RecruiterSidebar = () => {
                     </div>
                 </div>
                 <NavLink to="/recruiter/profile" className="btn-logout" style={{ marginTop: '0.5rem', marginBottom: '0.5rem', justifyContent: 'center', background: '#f3f4f6', color: 'var(--text-main)' }}>
-                    Edit Profile
+                    View Profile
                 </NavLink>
                 <button onClick={handleLogout} className="btn-logout" style={{ marginTop: '0.5rem' }}>
                     <span>↪</span> Sign Out

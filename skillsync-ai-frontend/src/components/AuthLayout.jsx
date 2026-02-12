@@ -5,7 +5,7 @@ const AuthLayout = ({ children, title, subtitle }) => {
 
                 {/* Left Panel: Form */}
                 <div className="auth-left-panel">
-                    <div className="brand-badge">SkillSync</div>
+                    <div className="brand-badge">SkillSync AI</div>
 
                     <div className="auth-header">
                         <h1 className="auth-title">{title}</h1>
@@ -25,20 +25,20 @@ const AuthLayout = ({ children, title, subtitle }) => {
                 <div className="auth-right-panel">
                     <div className="auth-image-container">
                         <img
-                            src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
-                            alt="Team collaboration"
+                            src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
+                            alt="SkillSync AI Talent Matching"
                             className="auth-image"
                         />
 
                         {/* Floating Glass Cards */}
                         <div className="overlay-card top-left">
-                            <div className="overlay-title">Task Review</div>
-                            <div className="overlay-subtitle">09:30am - 10:00am</div>
+                            <div className="overlay-title">AI Profile Analysis</div>
+                            <div className="overlay-subtitle">Smart matching in progress</div>
                         </div>
 
                         <div className="overlay-card bottom-center">
-                            <div className="overlay-title">Daily Meeting</div>
-                            <div className="overlay-subtitle">12:00pm - 01:00pm</div>
+                            <div className="overlay-title">Skill Score: 98%</div>
+                            <div className="overlay-subtitle">Perfect match for this role</div>
                         </div>
 
                     </div>

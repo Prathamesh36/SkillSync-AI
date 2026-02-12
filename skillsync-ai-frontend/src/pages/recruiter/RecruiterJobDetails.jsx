@@ -27,7 +27,6 @@ const RecruiterJobDetails = () => {
                     salaryMin: jobData.salaryMin || '',
                     salaryMax: jobData.salaryMax || '',
                     requiredExperienceYears: jobData.requiredExperienceYears || '',
-                    requiredExperienceYears: jobData.requiredExperienceYears || '',
                     currency: jobData.currency || 'INR',
                     skillsRequired: jobData.skillsRequired ? jobData.skillsRequired.join(', ') : '',
                     applicationDeadline: jobData.applicationDeadline || ''

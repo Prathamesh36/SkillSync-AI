@@ -13,26 +13,21 @@ import com.codingshuttle.hackathon.skillsyncai.repository.UserRepository;
 import com.codingshuttle.hackathon.skillsyncai.repository.ApplicationRepository;
 import com.codingshuttle.hackathon.skillsyncai.repository.MatchResultRepository;
 import com.codingshuttle.hackathon.skillsyncai.service.AIService;
+import com.codingshuttle.hackathon.skillsyncai.service.StorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/resumes")
@@ -47,9 +42,10 @@ public class ResumeController {
     private final CandidateRepository candidateRepository;
     private final ApplicationRepository applicationRepository;
     private final MatchResultRepository matchResultRepository;
+    private final StorageService storageService;
 
     @PostMapping("/upload")
-    @Operation(summary = "Upload and parse resume", description = "Uploads a PDF/DOCX resume, parses it with AI to extract skills/experience, updates the candidate profile, and stores a vector embedding for semantic search")
+    @Operation(summary = "Upload and parse resume", description = "Uploads a PDF/DOCX resume (to MinIO), parses it with AI, updates the candidate profile, and stores a vector embedding.")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "Resume parsed and stored"),
             @ApiResponse(responseCode = "400", description = "Invalid file or non-candidate user")
@@ -68,27 +64,18 @@ public class ResumeController {
             throw new BadRequestException("Only candidates can upload resumes.");
         }
 
-        // 1. Save file locally FIRST to avoid InputStream conflict
-        String uploadDir = "uploads/resumes/";
-        Path uploadPath = Paths.get(uploadDir);
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
-
+        // 1. Upload to StorageService (MinIO)
         String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-        Path filePath = uploadPath.resolve(fileName);
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-        log.info("File saved to: {}", filePath);
+        String storageFileName = storageService.uploadFile(file, fileName);
+        log.info("File uploaded to storage: {}", storageFileName);
 
-        // 2. Parse resume using the SAVED file
-        // Usage of UrlResource or FileSystemResource prevents the "InputStream has
-        // already been read" error
-        // because it opens a new stream.
-        Resource localFileResource = new UrlResource(filePath.toUri());
+        // 2. Parse resume using the uploaded file (Download back for parsing)
+        // We need a Resource to pass to AIService
+        Resource storageResource = storageService.downloadFile(storageFileName);
         ParsedResumeDTO parsed;
         try {
             log.info("Parsing resume file...");
-            parsed = aiService.parseResume(localFileResource);
+            parsed = aiService.parseResume(storageResource);
             log.debug("Resume parsed successfully: {}", parsed);
         } catch (Exception e) {
             log.error("Failed to parse resume with AI: {}. Proceeding with upload only.", e.getMessage());
@@ -101,7 +88,7 @@ public class ResumeController {
         resume.setUser(user);
         resume.setFileName(file.getOriginalFilename());
         resume.setFileType(file.getContentType());
-        resume.setS3Url(filePath.toString()); // Storing local path
+        resume.setS3Url(storageFileName); // Storing the MinIO object name
         resume.setParsedContent(parsed.summary());
         resume.setExtractedSkills(parsed.skills());
         resumeRepository.save(resume);
@@ -125,7 +112,7 @@ public class ResumeController {
             log.info("Candidate profile updated with resume data for user: {}", userId);
         }
 
-        // Invalidate Cache for Recommendations (so new resume gets new explanations)
+        // Invalidate Cache for Recommendations
         matchResultRepository.deleteByCandidateId(candidate.getId());
         log.info("Invalidated recommendation cache for candidate: {}", candidate.getId());
 
@@ -145,7 +132,7 @@ public class ResumeController {
 
             java.util.Map<String, Object> metadata = new java.util.HashMap<>();
             metadata.put("userId", userId);
-            metadata.put("docType", "RESUME"); // Ensure docType is set for filtering!
+            metadata.put("docType", "RESUME");
 
             aiService.storeResumeEmbedding(resume.getId(), resumeContent, metadata);
             log.info("Resume embedding stored for resumeId: {}", resume.getId());
@@ -157,7 +144,7 @@ public class ResumeController {
     }
 
     @DeleteMapping("/me")
-    @Operation(summary = "Delete current user's resume", description = "Deletes the resume file and record. Blocked if resume is linked to active applications.")
+    @Operation(summary = "Delete current user's resume", description = "Deletes the resume file from MinIO and record. Blocked if resume is linked to active applications.")
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Resume deleted"),
             @ApiResponse(responseCode = "400", description = "Resume in use by active applications"),
@@ -178,29 +165,24 @@ public class ResumeController {
                     "Cannot delete resume as it is used in job applications. Please upload a new resume to replace it for future applications.");
         }
 
-        // Delete file
+        // Delete file from Storage
         try {
             if (resume.getS3Url() != null) {
-                Files.deleteIfExists(Paths.get(resume.getS3Url()));
+                storageService.deleteFile(resume.getS3Url());
             }
         } catch (IOException e) {
-            log.warn("Failed to delete resume file: {}", resume.getS3Url());
+            log.warn("Failed to delete resume file from storage: {}", resume.getS3Url());
         }
 
         // Delete record
         resumeRepository.delete(resume);
-
-        // Note: Vector embedding deletion is not yet implemented in AIService,
-        // but since we filter by userId/resumeId/docType in search, it might be fine,
-        // or we should simply re-index on next upload.
-        // ideally: aiService.deleteEmbedding(resume.getId());
 
         log.info("Resume deleted for user: {}", userId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/download/{resumeId}")
-    @Operation(summary = "Download a resume file", description = "Returns the resume file as an attachment by its ID")
+    @Operation(summary = "Download a resume file", description = "Returns the resume file as an attachment from MinIO")
     @ApiResponses({
             @ApiResponse(responseCode = "200", description = "File returned"),
             @ApiResponse(responseCode = "404", description = "Resume not found")
@@ -210,26 +192,23 @@ public class ResumeController {
                 .orElseThrow(() -> new ResourceNotFoundException("Resume not found with id: " + resumeId));
 
         if (resume.getS3Url() == null) {
-            throw new ResourceNotFoundException("Resume file not found (legacy record)");
+            throw new ResourceNotFoundException("Resume file info not found");
         }
 
         try {
-            Path filePath = Paths.get(resume.getS3Url());
-            Resource resource = new UrlResource(filePath.toUri());
+            Resource resource = storageService.downloadFile(resume.getS3Url());
 
-            if (resource.exists() || resource.isReadable()) {
-                return ResponseEntity.ok()
-                        .contentType(MediaType.parseMediaType(
-                                resume.getFileType() != null ? resume.getFileType() : "application/octet-stream"))
-                        .header(HttpHeaders.CONTENT_DISPOSITION,
-                                "attachment; filename=\"" + resume.getFileName() + "\"")
-                        .body(resource);
-            } else {
-                throw new ResourceNotFoundException("Could not read file: " + resume.getFileName());
-            }
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(
+                            resume.getFileType() != null ? resume.getFileType() : "application/octet-stream"))
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"" + resume.getFileName() + "\"")
+                    .body(resource);
+
         } catch (Exception e) {
+            log.error("Failed to download file: {}", resume.getS3Url(), e);
             throw new ResourceNotFoundException(
-                    "Could not read file: " + resume.getFileName() + ". Error: " + e.getMessage());
+                    "Could not download file: " + resume.getFileName());
         }
     }
 }

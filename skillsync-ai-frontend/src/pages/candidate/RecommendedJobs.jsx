@@ -115,6 +115,17 @@ const RecommendedJobs = () => {
         }
     };
 
+    const formatPostedDate = (dateString) => {
+        if (!dateString) return '';
+        try {
+            const date = new Date(dateString);
+            const formattedDate = `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+            return `Posted ${formattedDate}`;
+        } catch (e) {
+            return '';
+        }
+    };
+
     return (
         <DashboardLayout>
             <div className="section-header">
@@ -211,7 +222,7 @@ const RecommendedJobs = () => {
                                 <div style={{ flex: 1 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
                                         <h3 style={{ fontSize: '1.1rem', fontWeight: '700', color: 'var(--text-main)' }}>
-                                            {job.jobTitle}
+                                            {job.title}
                                         </h3>
                                         {statusBadge && (
                                             <span style={{
@@ -231,7 +242,7 @@ const RecommendedJobs = () => {
                                     </p>
 
                                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-                                        {job.minExperience && (
+                                        {job.requiredExperienceYears !== undefined && (
                                             <span style={{
                                                 background: '#f3f4f6',
                                                 padding: '0.25rem 0.5rem',
@@ -239,32 +250,82 @@ const RecommendedJobs = () => {
                                                 fontSize: '0.75rem',
                                                 color: 'var(--text-muted)'
                                             }}>
-                                                🧑‍💼 {job.minExperience}+ years
+                                                🧑‍💼 {job.requiredExperienceYears}+ years
+                                            </span>
+                                        )}
+                                        {job.salaryMin && job.salaryMax && (
+                                            <span style={{
+                                                background: '#ecfdf5',
+                                                padding: '0.25rem 0.5rem',
+                                                borderRadius: '4px',
+                                                fontSize: '0.75rem',
+                                                color: '#059669',
+                                                fontWeight: '600'
+                                            }}>
+                                                💰 {job.currency || '₹'}{job.salaryMin.toLocaleString()} - {job.salaryMax.toLocaleString()}
+                                            </span>
+                                        )}
+                                        {job.jobType && (
+                                            <span style={{
+                                                background: '#eff6ff',
+                                                padding: '0.25rem 0.5rem',
+                                                borderRadius: '4px',
+                                                fontSize: '0.75rem',
+                                                color: '#2563eb'
+                                            }}>
+                                                🏠 {job.jobType}
                                             </span>
                                         )}
                                     </div>
 
+                                    {job.skillsRequired && job.skillsRequired.length > 0 && (
+                                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                                            {job.skillsRequired.slice(0, 5).map((skill, idx) => (
+                                                <span key={idx} style={{
+                                                    fontSize: '0.7rem',
+                                                    padding: '0.1rem 0.5rem',
+                                                    background: '#f9fafb',
+                                                    border: '1px solid #e5e7eb',
+                                                    borderRadius: '12px',
+                                                    color: 'var(--text-muted)'
+                                                }}>
+                                                    {skill}
+                                                </span>
+                                            ))}
+                                            {job.skillsRequired.length > 5 && (
+                                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                                    +{job.skillsRequired.length - 5} more
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
+
                                     {/* AI Insight Section */}
                                     <div style={{ marginTop: '0.75rem' }}>
                                         {!expandedExplanations[job.jobId] ? (
-                                            <button
-                                                onClick={() => handleViewExplanation(job.jobId)}
-                                                disabled={loadingExplanations.has(job.jobId)}
-                                                className="btn-ai-analysis"
-                                            >
-                                                ✨ {loadingExplanations.has(job.jobId) ? 'Analyzing...' : 'Why am I a match?'}
-                                            </button>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <button
+                                                    onClick={() => handleViewExplanation(job.jobId)}
+                                                    disabled={loadingExplanations.has(job.jobId)}
+                                                    className="btn-ai-analysis"
+                                                >
+                                                    ✨ {loadingExplanations.has(job.jobId) ? 'Analyzing...' : 'Why am I a match?'}
+                                                </button>
+                                            </div>
                                         ) : (
-                                            <div style={{
-                                                background: '#eff6ff',
-                                                borderLeft: '3px solid #3b82f6',
-                                                padding: '0.8rem',
-                                                borderRadius: '0 8px 8px 0',
-                                                fontSize: '0.9rem',
-                                                color: '#1e3a8a',
-                                                lineHeight: '1.4'
-                                            }}>
-                                                <strong>AI Analysis:</strong> {expandedExplanations[job.jobId]}
+                                            <div>
+                                                <div style={{
+                                                    background: '#eff6ff',
+                                                    borderLeft: '3px solid #3b82f6',
+                                                    padding: '0.8rem',
+                                                    borderRadius: '0 8px 8px 0',
+                                                    fontSize: '0.9rem',
+                                                    color: '#1e3a8a',
+                                                    lineHeight: '1.4',
+                                                    marginBottom: '0.5rem'
+                                                }}>
+                                                    <strong>AI Analysis:</strong> {expandedExplanations[job.jobId]}
+                                                </div>
                                             </div>
                                         )}
                                     </div>
@@ -306,6 +367,14 @@ const RecommendedJobs = () => {
                                             Apply Now
                                         </button>
                                     )}
+                                    <span style={{
+                                        fontSize: '0.75rem',
+                                        color: 'var(--text-muted)',
+                                        textAlign: 'center',
+                                        marginTop: '0.25rem'
+                                    }}>
+                                        {formatPostedDate(job.createdAt)}
+                                    </span>
                                 </div>
                             </div>
                         );
