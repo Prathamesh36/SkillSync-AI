@@ -10,6 +10,25 @@
 
 Traditional hiring platforms rely on keyword-based filtering, which fails to capture the nuance of a candidate's true capabilities. Recruiters manually sift through hundreds of resumes, candidates apply blindly to jobs that don't match their skills, and interviews are scheduled through tedious back-and-forth emails. The process is slow, biased toward keyword-stuffed resumes, and fundamentally broken.
 
+---
+## ✨ Key Features
+
+### 🔍 For Candidates
+- **AI Job Recommendations**: Get personalized job suggestions based on your resume's skills, experience, and bio, powered by semantic vector search.
+- **Smart explanations**: "Why this job?" — receive an AI-generated explanation for every recommendation (e.g., *"This job matches your 3 years of React experience and your preference for remote work"*).
+- **🤖 AI Mock Interviews**:
+    - **Resume-Based**: Practice answering questions generated specifically from your own resume projects and skills.
+    - **Topic-Based**: Choose a topic (e.g., "Java Concurrency") and difficulty level for targeted practice.
+    - **Real-time Feedback**: Get instant scoring (1-10), strengths, and areas for improvement after every answer.
+
+### 🎯 For Recruiters
+- **Intelligent Candidate Matching**: Instantly find the top N candidates for any job description, ranked by a hybrid score (Semantic Similarity + Experience + Skill Overlap).
+- **Automated Outreach**: Send personalized "Invite to Apply" emails to matched candidates with a single click.
+- **Interview Scheduling**: seamless scheduling with calendar (.ics) invites and automated email notifications.
+- **Dashboard Analytics**: Track application pipelines, interview statuses, and hiring metrics in one place.
+
+---
+
 ## 💡 Solution Overview
 
 SkillSync AI reimagines the hiring pipeline with AI at every stage:
@@ -85,29 +104,6 @@ SkillSync AI reimagines the hiring pipeline with AI at every stage:
 | MinIO | S3-compatible object storage |
 | Ollama | Local LLM inference (fallback) |
 | OpenRouter | Cloud AI model routing |
-
----
-
-## ✨ Key Features
-
-### For Recruiters
-- **Post & manage jobs** with detailed descriptions, required skills, experience levels, and employment types
-- **AI candidate matching** — find the best-fit candidates for any job using vector-based semantic search
-- **Invite-to-Apply** — proactively invite matched candidates with personalized messages and email notifications
-- **Application pipeline management** — review, shortlist, and track candidate applications
-- **Interview scheduling** — schedule interviews (online/in-person) with automatic calendar invites (`.ics`)
-- **Reschedule & cancel** interviews with real-time email notifications to both parties
-- **Dashboard analytics** — view job stats, application counts, and recruiter profile completion
-
-### For Candidates
-- **Upload & parse resumes** — AI extracts structured profile data automatically
-- **Browse & filter jobs** — search by skills, location, experience, employment type
-- **AI job recommendations** — personalized job suggestions with AI-generated explanations for why each job matches
-- **One-click apply** — apply to jobs with your parsed resume
-- **AI mock interviews** — practice with an AI interviewer that adapts questions to your skills and evaluates your answers (resume-based or topic-based)
-- **Interview history & transcripts** — review past mock interview sessions with scores and feedback
-- **View scheduled interviews** — track real interview schedules set by recruiters
-- **Job invitations** — receive and accept/decline recruiter invitations
 
 ---
 
