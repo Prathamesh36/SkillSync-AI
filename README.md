@@ -1,3 +1,5 @@
+# 🚀 Swagger URL: https://skillsync-ai-backend-production.up.railway.app/swagger-ui/index.html
+
 # 🚀 SkillSync AI
 
 **An AI-powered hiring platform that uses semantic search and intelligent matching to connect the right candidates with the right jobs — automatically.**
@@ -335,9 +337,7 @@ erDiagram
       +---> [ResumeController] -> [AIService] 
       |           |
       |           +---> [OpenAI / Ollama] (LLM Parsing)
-      |           +---> [OpenAI / Ollama] (LLM Parsing)
       |           +---> [MinIO] (Object Storage)
-      |           +---> [PGVector] (Embeddings)
       |           +---> [PGVector] (Embeddings)
       |
       +---> [JobController] -> [JobService] -> [PostgreSQL (Jobs)]
@@ -365,7 +365,6 @@ sequenceDiagram
     participant User as Frontend
     participant Controller as ResumeController
     participant Service as AIService
-    participant LLM as OpenAI/Ollama
     participant LLM as OpenAI/Ollama
     participant DB as PostgreSQL
     participant MinIO as ObjectStorage
@@ -451,7 +450,10 @@ K8s manifests provided for:
 - `frontend.yaml` — Nginx-served React app + Service
 
 ### Cloud Deployment
-- **Frontend**: Deployable to **Vercel** (static build output from Vite)
+For step-by-step instructions on deploying the full stack to Railway, see:
+👉 **[RAILWAY_DEPLOY.md](RAILWAY_DEPLOY.md)**
+
+- **Frontend**: Deployable to **Vercel** or **Railway** (static build output from Vite)
 - **Backend**: Containerized with multi-stage Dockerfile (Amazon Corretto 21 Alpine)
 
 ---
@@ -622,7 +624,6 @@ Every AI call follows a **primary → fallback** pattern:
 - Node.js 20+
 - Maven 3.9+
 - Docker & Docker Compose
-- Docker & Docker Compose
 - PostgreSQL 16 with pgvector extension **or** use Docker
 - MinIO Server (local or container)
 
@@ -693,7 +694,7 @@ This starts:
 | `SPRING_DATASOURCE_URL` | PostgreSQL JDBC URL (default: `jdbc:postgresql://localhost:5454/vectordb`) | Optional |
 | `SPRING_DATASOURCE_USERNAME` | Database username (default: `root`) | Optional |
 | `SPRING_DATASOURCE_PASSWORD` | Database password (default: `root`) | Optional |
-| `MINIO_URL` | MinIO server URL (default: `http://localhost:9000`) | ✅ |
+| `MINIO_ENDPOINT` | MinIO server URL (default: `http://localhost:9000`) | ✅ |
 | `MINIO_ACCESS_KEY` | MinIO access key | ✅ |
 | `MINIO_SECRET_KEY` | MinIO secret key | ✅ |
 
