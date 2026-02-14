@@ -8,17 +8,17 @@ import java.util.List;
 @Service
 public class MatchScoreCalculatorImpl implements MatchScoreCalculator {
 
-    private static final double BASE_SCORE = 0.30;
-    private static final double VARIABLE_WEIGHT = 0.70;
+    private static final double BASE_SCORE = 0.10;
+    private static final double VARIABLE_WEIGHT = 0.90;
     private static final double WEIGHT_SKILLS = 0.75;
     private static final double WEIGHT_EXPERIENCE = 0.25;
-    public static final double MIN_SKILL_OVERLAP = 0.2;
+    public static final double MIN_SKILL_OVERLAP = 0.3;
 
     @Override
     public double calculateScore(List<String> jobSkills, List<String> candidateSkills,
-            Integer jobExp, Integer candidateExp) {
+            Integer minExp, Integer maxExp, Integer candidateExp) {
         double skillScore = calculateSkillOverlap(jobSkills, candidateSkills);
-        double expScore = calculateExperienceScore(jobExp, candidateExp);
+        double expScore = calculateExperienceScore(minExp, maxExp, candidateExp);
 
         double variable = (WEIGHT_SKILLS * skillScore) + (WEIGHT_EXPERIENCE * expScore);
         double raw = BASE_SCORE + (VARIABLE_WEIGHT * variable);
@@ -49,15 +49,25 @@ public class MatchScoreCalculatorImpl implements MatchScoreCalculator {
     }
 
     @Override
-    public double calculateExperienceScore(Integer jobExp, Integer candidateExp) {
-        if (jobExp == null || jobExp == 0)
+    public double calculateExperienceScore(Integer minExp, Integer maxExp, Integer candidateExp) {
+        // No experience requirement = perfect match
+        if ((minExp == null || minExp == 0) && (maxExp == null || maxExp == 0))
             return 1.0;
         if (candidateExp == null)
             return 0.5;
 
-        if (candidateExp >= jobExp) {
+        int effectiveMin = (minExp != null) ? minExp : 0;
+        int effectiveMax = (maxExp != null) ? maxExp : Integer.MAX_VALUE;
+
+        if (candidateExp >= effectiveMin && candidateExp <= effectiveMax) {
+            // Within range — perfect match
             return 1.0;
+        } else if (candidateExp > effectiveMax && maxExp != null) {
+            // Overqualified — slight penalty
+            return 0.85;
+        } else {
+            // Underqualified — proportional score
+            return Math.max(0.3, (double) candidateExp / effectiveMin);
         }
-        return Math.max(0.3, (double) candidateExp / jobExp);
     }
 }

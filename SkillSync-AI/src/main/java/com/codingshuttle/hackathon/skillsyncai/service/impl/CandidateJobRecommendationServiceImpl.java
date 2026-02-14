@@ -101,8 +101,8 @@ public class CandidateJobRecommendationServiceImpl implements CandidateJobRecomm
             if (job == null || !job.isActive())
                 continue;
 
-            if (job.getRequiredExperienceYears() != null && candidate.getExperienceYears() != null) {
-                if (candidate.getExperienceYears() < job.getRequiredExperienceYears())
+            if (job.getMinExperienceYears() != null && candidate.getExperienceYears() != null) {
+                if (candidate.getExperienceYears() < job.getMinExperienceYears())
                     continue;
             }
 
@@ -124,7 +124,7 @@ public class CandidateJobRecommendationServiceImpl implements CandidateJobRecomm
                 continue;
 
             double finalScore = matchScoreCalculator.calculateScore(job.getSkillsRequired(), candidateSkills,
-                    job.getRequiredExperienceYears(), candidate.getExperienceYears());
+                    job.getMinExperienceYears(), job.getMaxExperienceYears(), candidate.getExperienceYears());
             double matchPercentage = finalScore * 100;
 
             if (matchPercentage < (minScore != null ? minScore * 100 : 70.0))
@@ -143,7 +143,8 @@ public class CandidateJobRecommendationServiceImpl implements CandidateJobRecomm
                     appStatus,
                     matchPercentage,
                     null,
-                    job.getRequiredExperienceYears(),
+                    job.getMinExperienceYears(),
+                    job.getMaxExperienceYears(),
                     job.getCreatedAt(),
                     job.getCurrency()));
         }
@@ -187,7 +188,8 @@ public class CandidateJobRecommendationServiceImpl implements CandidateJobRecomm
                     rec.applicationStatus(),
                     rec.matchScore(),
                     explanation,
-                    rec.requiredExperienceYears(),
+                    rec.minExperienceYears(),
+                    rec.maxExperienceYears(),
                     rec.createdAt(),
                     rec.currency()));
         }
@@ -223,7 +225,7 @@ public class CandidateJobRecommendationServiceImpl implements CandidateJobRecomm
                 You are a helpful career advisor speaking directly to the candidate %s.
                 Analyze why this job at %s is a match, but also highlight any gaps.
                 Candidate Skills: %s. Candidate Experience: %d years.
-                Job Required Skills: %s. Job Required Experience: %d years.
+                Job Required Skills: %s. Job Required Experience: %d-%d years.
                 Missing Skills: %s.
                 Rules:
                 1. Use "You" and "Your" to address the candidate.
@@ -233,7 +235,9 @@ public class CandidateJobRecommendationServiceImpl implements CandidateJobRecomm
                 3. Total length: 50-75 words.
                 """,
                 candidate.getUser().getName(), job.getCompanyName(), String.join(", ", candidateSkills),
-                candidate.getExperienceYears(), String.join(", ", jobSkills), job.getRequiredExperienceYears(),
+                candidate.getExperienceYears(), String.join(", ", jobSkills),
+                job.getMinExperienceYears() != null ? job.getMinExperienceYears() : 0,
+                job.getMaxExperienceYears() != null ? job.getMaxExperienceYears() : 99,
                 missingSkills.isEmpty() ? "None" : String.join(", ", missingSkills));
         return chatClient.prompt().user(prompt).call().content();
     }
