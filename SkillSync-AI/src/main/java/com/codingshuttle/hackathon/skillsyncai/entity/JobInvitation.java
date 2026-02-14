@@ -53,32 +53,25 @@ public class JobInvitation {
     @Column(nullable = false)
     private LocalDateTime invitedAt;
 
-    /** When the candidate responded (accepted/declined) */
     @Column
     private LocalDateTime respondedAt;
 
-    /** Optional message from recruiter to candidate */
+
     @Column(length = 1000)
     private String message;
 
-    /** Unique token for secure accept/decline links */
+
     @Column(nullable = false, unique = true, length = 64)
     private String invitationToken;
 
-    /** When this invitation expires */
     @Column(nullable = false)
     private LocalDateTime expiresAt;
 
-    /**
-     * Check if this invitation has expired.
-     */
+
     public boolean isExpired() {
         return LocalDateTime.now().isAfter(expiresAt);
     }
 
-    /**
-     * Check if this invitation can still be responded to.
-     */
     public boolean canRespond() {
         return status == JobInvitationStatus.SENT && !isExpired();
     }

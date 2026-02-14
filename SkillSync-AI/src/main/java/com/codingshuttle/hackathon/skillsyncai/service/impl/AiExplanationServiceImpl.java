@@ -26,7 +26,7 @@ public class AiExplanationServiceImpl implements AiExplanationService {
 
                     Job Title: %s
                     Job Skills Required: %s
-                    Job Experience Required: %d years
+                    Job Experience Required: %d-%d years
 
                     Candidate Experience: %d years
                     Candidate Skills: %s
@@ -39,7 +39,8 @@ public class AiExplanationServiceImpl implements AiExplanationService {
                     """,
                     job.getTitle(),
                     jobSkills,
-                    job.getRequiredExperienceYears() != null ? job.getRequiredExperienceYears() : 0,
+                    job.getMinExperienceYears() != null ? job.getMinExperienceYears() : 0,
+                    job.getMaxExperienceYears() != null ? job.getMaxExperienceYears() : 99,
                     candidate.getExperienceYears() != null ? candidate.getExperienceYears() : 0,
                     candidateSkills,
                     candidate.getHeadline() != null ? candidate.getHeadline() : "N/A");

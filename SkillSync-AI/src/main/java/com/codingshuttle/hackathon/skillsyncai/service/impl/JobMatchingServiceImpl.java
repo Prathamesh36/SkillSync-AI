@@ -91,8 +91,8 @@ public class JobMatchingServiceImpl implements JobMatchingService {
             if (resume == null || !vectorScores.containsKey(resume.getId()))
                 continue;
 
-            if (job.getRequiredExperienceYears() != null && candidate.getExperienceYears() != null) {
-                if (candidate.getExperienceYears() < job.getRequiredExperienceYears())
+            if (job.getMinExperienceYears() != null && candidate.getExperienceYears() != null) {
+                if (candidate.getExperienceYears() < job.getMinExperienceYears())
                     continue;
             }
 
@@ -102,7 +102,7 @@ public class JobMatchingServiceImpl implements JobMatchingService {
                 continue;
 
             double finalScore = matchScoreCalculator.calculateScore(job.getSkillsRequired(), candidate.getSkills(),
-                    job.getRequiredExperienceYears(), candidate.getExperienceYears());
+                    job.getMinExperienceYears(), job.getMaxExperienceYears(), candidate.getExperienceYears());
 
             results.add(MatchedCandidateDTO.builder()
                     .candidateId(candidate.getId())

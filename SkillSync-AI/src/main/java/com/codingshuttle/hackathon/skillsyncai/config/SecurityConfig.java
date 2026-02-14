@@ -12,6 +12,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -44,13 +45,14 @@ public class SecurityConfig {
     }
 
     @Bean
-    public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource() {
         org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
         configuration.setAllowedOrigins(java.util.List.of(
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
                 "http://localhost:30080",
-                "http://127.0.0.1:30080"));
+                "http://127.0.0.1:30080",
+                "https://skill-sync-ai-puce.vercel.app"));
         configuration.setAllowedMethods(java.util.List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(
                 java.util.List.of("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin"));

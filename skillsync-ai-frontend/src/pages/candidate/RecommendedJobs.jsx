@@ -242,7 +242,7 @@ const RecommendedJobs = () => {
                                     </p>
 
                                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-                                        {job.requiredExperienceYears !== undefined && (
+                                        {(job.minExperienceYears !== undefined || job.maxExperienceYears !== undefined) && (
                                             <span style={{
                                                 background: '#f3f4f6',
                                                 padding: '0.25rem 0.5rem',
@@ -250,7 +250,11 @@ const RecommendedJobs = () => {
                                                 fontSize: '0.75rem',
                                                 color: 'var(--text-muted)'
                                             }}>
-                                                🧑‍💼 {job.requiredExperienceYears}+ years
+                                                🧑‍💼 {job.minExperienceYears != null && job.maxExperienceYears != null
+                                                    ? `${job.minExperienceYears}-${job.maxExperienceYears} years`
+                                                    : job.minExperienceYears != null
+                                                        ? `${job.minExperienceYears}+ years`
+                                                        : `0-${job.maxExperienceYears} years`}
                                             </span>
                                         )}
                                         {job.salaryMin && job.salaryMax && (

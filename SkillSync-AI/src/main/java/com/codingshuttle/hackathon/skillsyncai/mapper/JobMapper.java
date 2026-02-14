@@ -21,7 +21,8 @@ public class JobMapper {
         job.setCurrency(dto.currency());
         job.setJobType(dto.jobType());
         job.setEmploymentType(dto.employmentType());
-        job.setRequiredExperienceYears(dto.requiredExperienceYears());
+        job.setMinExperienceYears(dto.minExperienceYears());
+        job.setMaxExperienceYears(dto.maxExperienceYears());
         job.setSkillsRequired(dto.skillsRequired());
         job.setApplicationDeadline(dto.applicationDeadline());
         job.setJobReferenceId(dto.jobReferenceId());
@@ -41,7 +42,8 @@ public class JobMapper {
                 job.getJobType(),
                 job.getEmploymentType(),
                 job.getPostedBy() != null ? job.getPostedBy().getId() : null,
-                job.getRequiredExperienceYears(),
+                job.getMinExperienceYears(),
+                job.getMaxExperienceYears(),
                 job.getSkillsRequired(),
                 job.getApplicationDeadline(),
                 job.isActive(),
@@ -67,24 +69,15 @@ public class JobMapper {
             job.setJobType(dto.jobType());
         if (dto.employmentType() != null)
             job.setEmploymentType(dto.employmentType());
-        if (dto.requiredExperienceYears() != null)
-            job.setRequiredExperienceYears(dto.requiredExperienceYears());
+        if (dto.minExperienceYears() != null)
+            job.setMinExperienceYears(dto.minExperienceYears());
+        if (dto.maxExperienceYears() != null)
+            job.setMaxExperienceYears(dto.maxExperienceYears());
         if (dto.skillsRequired() != null)
             job.setSkillsRequired(dto.skillsRequired());
         if (dto.applicationDeadline() != null)
             job.setApplicationDeadline(dto.applicationDeadline());
         if (dto.jobReferenceId() != null)
             job.setJobReferenceId(dto.jobReferenceId());
-        // active status is usually toggled via specific endpoint or separate field in
-        // DTO if we allow it here
-        // For now, let's assume active is handled separately or we add it to DTO if
-        // needed.
-        // Actually plan said default true, but recruiter can toggle.
-        // Let's rely on specific close action or add active to create/update DTO?
-        // Plan says: Map active in updateEntityFromDTO. DTO doesn't have active field
-        // yet.
-        // I should probably add active to JobCreateDTO or just use specific endpoint.
-        // Let's stick to adding it to DTO if we want to allow update.
-        // But for now, deadline is key.
     }
 }

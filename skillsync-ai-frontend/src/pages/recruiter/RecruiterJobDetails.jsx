@@ -26,7 +26,8 @@ const RecruiterJobDetails = () => {
                     employmentType: jobData.employmentType || 'FULL_TIME',
                     salaryMin: jobData.salaryMin || '',
                     salaryMax: jobData.salaryMax || '',
-                    requiredExperienceYears: jobData.requiredExperienceYears || '',
+                    minExperienceYears: jobData.minExperienceYears || '',
+                    maxExperienceYears: jobData.maxExperienceYears || '',
                     currency: jobData.currency || 'INR',
                     skillsRequired: jobData.skillsRequired ? jobData.skillsRequired.join(', ') : '',
                     applicationDeadline: jobData.applicationDeadline || ''
@@ -56,7 +57,8 @@ const RecruiterJobDetails = () => {
                 salaryMin: formData.salaryMin ? Number(formData.salaryMin) : null,
                 salaryMax: formData.salaryMax ? Number(formData.salaryMax) : null,
                 currency: formData.currency || 'INR',
-                requiredExperienceYears: formData.requiredExperienceYears ? Number(formData.requiredExperienceYears) : null,
+                minExperienceYears: formData.minExperienceYears ? Number(formData.minExperienceYears) : null,
+                maxExperienceYears: formData.maxExperienceYears ? Number(formData.maxExperienceYears) : null,
                 skillsRequired: formData.skillsRequired ? formData.skillsRequired.split(',').map(s => s.trim()).filter(s => s) : [],
                 applicationDeadline: formData.applicationDeadline || null,
                 jobReferenceId: job.jobReferenceId // Include existing ID
@@ -260,15 +262,27 @@ const RecruiterJobDetails = () => {
                                     </select>
                                 </div>
                                 <div className="form-group" style={{ marginBottom: 0 }}>
-                                    <label className="form-label" style={{ fontSize: '0.85rem' }}>Experience (Yrs)</label>
+                                    <label className="form-label" style={{ fontSize: '0.85rem' }}>Min Exp (Yrs)</label>
                                     <input
                                         type="number"
-                                        name="requiredExperienceYears"
+                                        name="minExperienceYears"
                                         className="form-input"
-                                        value={formData.requiredExperienceYears}
+                                        value={formData.minExperienceYears}
                                         onChange={handleChange}
                                         min="0"
-                                        placeholder="e.g. 3"
+                                        placeholder="Min Exp"
+                                    />
+                                </div>
+                                <div className="form-group" style={{ marginBottom: 0 }}>
+                                    <label className="form-label" style={{ fontSize: '0.85rem' }}>Max Exp (Yrs)</label>
+                                    <input
+                                        type="number"
+                                        name="maxExperienceYears"
+                                        className="form-input"
+                                        value={formData.maxExperienceYears}
+                                        onChange={handleChange}
+                                        min="0"
+                                        placeholder="e.g. 5"
                                     />
                                 </div>
                                 <div className="form-group" style={{ marginBottom: 0 }}>
@@ -364,9 +378,13 @@ const RecruiterJobDetails = () => {
                                 <span className="badge" style={{ background: '#ecfdf5', color: '#065f46', padding: '0.5rem 0.75rem', fontSize: '0.9rem', fontWeight: '500' }}>
                                     💰 {formatSalary(job.salaryMin, job.salaryMax, job.currency)}
                                 </span>
-                                {job.requiredExperienceYears !== null && job.requiredExperienceYears !== undefined && (
+                                {((job.minExperienceYears !== null && job.minExperienceYears !== undefined) || (job.maxExperienceYears !== null && job.maxExperienceYears !== undefined)) && (
                                     <span className="badge" style={{ background: '#fffbeb', color: '#b45309', padding: '0.5rem 0.75rem', fontSize: '0.9rem', fontWeight: '500' }}>
-                                        🎓 {job.requiredExperienceYears}+ Years Exp.
+                                        🎓 {job.minExperienceYears != null && job.maxExperienceYears != null
+                                            ? `${job.minExperienceYears}-${job.maxExperienceYears} Years Exp.`
+                                            : job.minExperienceYears != null
+                                                ? `${job.minExperienceYears}+ Years Exp.`
+                                                : `0-${job.maxExperienceYears} Years Exp.`}
                                     </span>
                                 )}
                                 {job.applicationDeadline && (

@@ -55,7 +55,15 @@ const JobCard = ({ job, onApply, onViewDetails }) => {
                     🏢 {job.jobType ? `${job.jobType} • ` : ''}{job.employmentType || (job.isRecommended ? 'See Details' : 'Full Time')}
                 </span>
                 <span className="badge" style={{ background: '#fdf4ff', color: '#86198f', padding: '0.3rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem' }}>
-                    🎓 {job.requiredExperienceYears}+ Yrs
+                    🎓 {job.minExperienceYears != null && job.maxExperienceYears != null
+                        ? `${job.minExperienceYears}-${job.maxExperienceYears} Yrs`
+                        : job.minExperienceYears != null
+                            ? `${job.minExperienceYears}+ Yrs`
+                            : job.maxExperienceYears != null
+                                ? `0-${job.maxExperienceYears} Yrs`
+                                : job.requiredExperienceYears != null
+                                    ? `${job.requiredExperienceYears}+ Yrs`
+                                    : '+ Yrs'}
                 </span>
             </div>
 

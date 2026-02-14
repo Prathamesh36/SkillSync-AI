@@ -45,7 +45,8 @@ public class Job {
     @Enumerated(EnumType.STRING)
     private EmploymentType employmentType; // FULL_TIME, CONTRACT
 
-    private Integer requiredExperienceYears;
+    private Integer minExperienceYears;
+    private Integer maxExperienceYears;
 
     @ElementCollection
     private List<String> skillsRequired;

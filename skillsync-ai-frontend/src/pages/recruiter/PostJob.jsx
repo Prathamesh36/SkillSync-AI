@@ -18,7 +18,8 @@ const PostJob = () => {
         currency: 'INR',
         jobType: 'ONSITE',
         employmentType: 'FULL_TIME',
-        requiredExperienceYears: '',
+        minExperienceYears: '',
+        maxExperienceYears: '',
         skillsRequired: '', // Comma separated string
         applicationDeadline: '',
         jobReferenceId: ''
@@ -69,7 +70,8 @@ const PostJob = () => {
                 currency: formData.currency,
                 jobType: formData.jobType,
                 employmentType: formData.employmentType,
-                requiredExperienceYears: formData.requiredExperienceYears ? Number(formData.requiredExperienceYears) : null,
+                minExperienceYears: formData.minExperienceYears ? Number(formData.minExperienceYears) : null,
+                maxExperienceYears: formData.maxExperienceYears ? Number(formData.maxExperienceYears) : null,
                 skillsRequired: skillsArray,
                 applicationDeadline: formData.applicationDeadline || null,
                 jobReferenceId: formData.jobReferenceId || null
@@ -208,15 +210,27 @@ const PostJob = () => {
                             </select>
                         </div>
                         <div className="form-group" style={{ marginBottom: 0 }}>
-                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Experience (Yrs)</label>
+                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Min Exp (Yrs)</label>
                             <input
                                 type="number"
-                                name="requiredExperienceYears"
+                                name="minExperienceYears"
                                 className="form-input"
-                                value={formData.requiredExperienceYears}
+                                value={formData.minExperienceYears}
                                 onChange={handleChange}
                                 min="0"
-                                placeholder="e.g. 3"
+                                placeholder="e.g. 2"
+                            />
+                        </div>
+                        <div className="form-group" style={{ marginBottom: 0 }}>
+                            <label className="form-label" style={{ fontSize: '0.85rem' }}>Max Exp (Yrs)</label>
+                            <input
+                                type="number"
+                                name="maxExperienceYears"
+                                className="form-input"
+                                value={formData.maxExperienceYears}
+                                onChange={handleChange}
+                                min="0"
+                                placeholder="e.g. 5"
                             />
                         </div>
                         <div className="form-group" style={{ marginBottom: 0 }}>

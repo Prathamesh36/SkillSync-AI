@@ -238,7 +238,15 @@ const JobDetailsModal = ({ jobId, onClose, applicationStatus, aiExplanation }) =
                                 ⏳ {job.employmentType}
                             </span>
                             <span style={{ background: '#fffbeb', color: '#b45309', padding: '0.4rem 1rem', borderRadius: 'var(--radius-pill)', fontSize: '0.9rem', fontWeight: '500' }}>
-                                🎓 {job.requiredExperienceYears}+ Years Exp.
+                                🎓 {job.minExperienceYears != null && job.maxExperienceYears != null
+                                    ? `${job.minExperienceYears}-${job.maxExperienceYears} Years Exp.`
+                                    : job.minExperienceYears != null
+                                        ? `${job.minExperienceYears}+ Years Exp.`
+                                        : job.maxExperienceYears != null
+                                            ? `0-${job.maxExperienceYears} Years Exp.`
+                                            : job.requiredExperienceYears != null
+                                                ? `${job.requiredExperienceYears}+ Years Exp.`
+                                                : 'Experience N/A'}
                             </span>
                         </div>
 

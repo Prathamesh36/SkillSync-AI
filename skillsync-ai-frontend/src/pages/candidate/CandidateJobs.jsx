@@ -63,20 +63,22 @@ const CandidateJobs = () => {
                     // Normalize recommended jobs to match JobResponseDTO
                     const recommended = recommendedRaw.map(r => ({
                         id: r.jobId,
-                        title: r.jobTitle,
+                        title: r.title,
                         companyName: r.companyName,
                         location: r.location,
-                        salaryMin: null, // Recommendations might not have all fields in list view
-                        salaryMax: null,
-                        jobType: r.jobType || '',
-                        employmentType: r.employmentType || '',
-                        requiredExperienceYears: r.minExperience,
-                        skillsRequired: r.skills || [],
-                        createdAt: new Date().toISOString(), // Fallback
+                        salaryMin: r.salaryMin,
+                        salaryMax: r.salaryMax,
+                        currency: r.currency,
+                        jobType: r.jobType || 'ONSITE',
+                        employmentType: r.employmentType || 'FULL_TIME',
+                        minExperienceYears: r.minExperienceYears,
+                        maxExperienceYears: r.maxExperienceYears,
+                        skillsRequired: r.skillsRequired || [],
+                        createdAt: r.createdAt || new Date().toISOString(),
                         // Additional fields for UI
                         isRecommended: true,
                         matchScore: r.matchScore,
-                        aiExplanation: r.shortAiExplanation,
+                        aiExplanation: r.explanation,
                         applicationStatus: r.applicationStatus
                     }));
 

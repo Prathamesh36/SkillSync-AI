@@ -36,7 +36,7 @@ spring:
       base-url: ${SPRING_AI_OLLAMA_BASE_URL:http://localhost:11434}
       chat:
         options:
-          model: gemma3:latest
+          model: openrouter/free
     # google:
     #   genai:
     #     api-key: AIzaSyDZ0MLb0yin9wbR2b7-ZKJ348BWYaLpKL4
@@ -60,19 +60,11 @@ spring:
   #         starttls:
   #           enable: true
 
-minio:
-  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
-  access-key: ${MINIO_ACCESS_KEY}
-  secret-key: ${MINIO_SECRET_KEY}
-  bucket: ${MINIO_BUCKET:skillsync-resumes}
-
 server:
   port: 9090
 
-springdoc:
-  api-docs:
-    path: /v3/api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    tags-sorter: alpha
-    operations-sorter: method
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:admin}
+  secret-key: ${MINIO_SECRET_KEY:password}
+  bucket: ${MINIO_BUCKET:skillsync-resumes}

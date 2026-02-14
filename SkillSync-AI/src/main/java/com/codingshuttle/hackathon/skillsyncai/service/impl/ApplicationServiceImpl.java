@@ -77,7 +77,8 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     private Double calculateMatchScore(Job job, Candidate candidate) {
         double skillScore = calculateSkillScore(job.getSkillsRequired(), candidate.getSkills());
-        double expScore = calculateExperienceScore(job.getRequiredExperienceYears(), candidate.getExperienceYears());
+        double expScore = calculateExperienceScore(job.getMinExperienceYears(), job.getMaxExperienceYears(),
+                candidate.getExperienceYears());
 
         double finalScore = (0.7 * skillScore) + (0.3 * expScore);
         return Math.round(finalScore * 100.0 * 10.0) / 10.0;
@@ -97,14 +98,20 @@ public class ApplicationServiceImpl implements ApplicationService {
         return (double) matchCount / jobSkillSet.size();
     }
 
-    private double calculateExperienceScore(Integer jobExp, Integer candidateExp) {
-        if (jobExp == null || jobExp == 0)
+    private double calculateExperienceScore(Integer minExp, Integer maxExp, Integer candidateExp) {
+        if ((minExp == null || minExp == 0) && (maxExp == null || maxExp == 0))
             return 1.0;
         if (candidateExp == null)
             return 0.0;
-        if (candidateExp >= jobExp)
+
+        int effectiveMin = (minExp != null) ? minExp : 0;
+        int effectiveMax = (maxExp != null) ? maxExp : Integer.MAX_VALUE;
+
+        if (candidateExp >= effectiveMin && candidateExp <= effectiveMax)
             return 1.0;
-        return (double) candidateExp / jobExp;
+        if (candidateExp > effectiveMax)
+            return 0.85;
+        return Math.max(0.3, (double) candidateExp / effectiveMin);
     }
 
     @Override

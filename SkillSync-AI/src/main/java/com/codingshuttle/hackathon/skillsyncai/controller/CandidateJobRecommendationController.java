@@ -35,7 +35,7 @@ public class CandidateJobRecommendationController {
         public ResponseEntity<List<RecommendedJobResponse>> getRecommendedJobs(
                         Authentication authentication,
                         @RequestParam(defaultValue = "5") int top,
-                        @RequestParam(defaultValue = "0.5") Double minScore,
+                        @RequestParam(defaultValue = "0.6") Double minScore,
                         @RequestParam(required = false) String location) {
 
                 String email = authentication.getName();
@@ -44,8 +44,8 @@ public class CandidateJobRecommendationController {
                 User user = userRepository.findByEmail(email)
                                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-                List<RecommendedJobResponse> recommendations = recommendationService.getRecommendations(
-                                user, top, minScore, location);
+                List<RecommendedJobResponse> recommendations = recommendationService.getRecommendations(user, top,
+                                minScore, location);
 
                 return ResponseEntity.ok(recommendations);
         }
